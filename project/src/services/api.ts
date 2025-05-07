@@ -1,39 +1,45 @@
 import axios from 'axios';
 
-// Create an axios instance
 export const api = axios.create({
   baseURL: 'http://localhost:4000/api',
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-// Request interceptor to add auth token to requests
+// Attach token to every request
 api.interceptors.request.use(
-  config => {
+  (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  error => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle common errors
+// Global response error handler
 api.interceptors.response.use(
-  response => {
-    return response;
-  },
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid, log out user
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
+// Get all roles
+export const getRoles = () => api.get('/roles');
+
+// Register a new user
+export const registerUser = (data: any) => api.post('/users/register', data);
+
+// Get all users
+export const getUsers = () => api.get('/users');
+
+//Get user by ID
+export const getUserById = (id: string) => api.get(`/users/${id}`);

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { X, LayoutDashboard, ClipboardCheck, FileText, Users, Settings, Activity } from 'lucide-react';
+import { X, LayoutDashboard, ClipboardCheck, FileText, Users, ClipboardList , Activity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         name: 'Dashboard',
         icon: <LayoutDashboard size={20} />,
         path: '/dashboard',
-        roles: ['Admin', 'PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector']
+        roles: ['Admin', 'PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector', 'SuperAdmin']
       },
       {
         name: 'New Inspection',
@@ -42,35 +42,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         path: '/reports/inspectors',
         roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector']
       },
+      
+      {
+        name: 'Manage Users',
+        icon: <Users size={20} />,
+        path: '/user/new',
+        roles: ['SuperAdmin', 'Admin']
+      },
       {
         name: 'Reports',
         icon: <Activity size={20} />,
         path: '/reports',
-        roles: ['Admin']
-      },
-      {
-        name: 'All Reports',
-        icon: <Activity size={20} />,
-        path: '/reports/all',
         roles: ['Admin', 'SuperAdmin']
       },
       {
-        name: 'Manage Inspectors',
-        icon: <Users size={20} />,
-        path: '/users',
-        roles: ['Admin']
-      },
-      {
-        name: 'Manage Admins',
-        icon: <Users size={20} />,
-        path: '/user/new',
-        roles: ['SuperAdmin']
-      },
-      {
-        name: 'Settings',
-        icon: <Settings size={20} />,
+        name: 'Master Data Entry',
+        icon: <ClipboardList size={20} />,
         path: '/settings',
-        roles: ['Admin']
+        roles: ['SuperAdmin']
       },
       // {
       //   name: 'Help',

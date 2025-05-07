@@ -1,16 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Mail, Lock, User, Briefcase, FileText, Globe, Building, ClipboardSignature } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Mail, Lock, User, Briefcase, FileText, Globe,
+  Building, ClipboardSignature, Eye, EyeOff, Search
+} from 'lucide-react';
+import { getRoles, registerUser, getUsers } from '../../services/api.ts';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 interface Role {
   id: number;
   name: string;
 }
 
+interface UserType {
+  id: number;
+  email: string;
+  username: string;
+  country: string;
+  phone_number: string | null;
+  registration_id: string | null;
+  company_name: string | null;
+  cv_url: string | null;
+  work_experience: string | null;
+  roles: Role[];
+}
+
 const UserForm: React.FC = () => {
   const navigate = useNavigate();
   const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState<'add' | 'view'>('add');
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 5,
+  });
 
   const [formData, setFormData] = useState({
     username: '',
@@ -24,44 +51,19 @@ const UserForm: React.FC = () => {
     workExperience: ''
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    console.log("Fetching roles with token:", token);
-    
-    axios.get('http://localhost:4000/api/roles', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      }
-    })
-    .then(res => {
-      console.log("Roles fetched:", res.data);
-      setRoles(res.data.data);
-    })
-    .catch(err => {
-      console.error("Error fetching roles:", err);
-      setError('Failed to load roles');
-    });
-  }, []);
-  
-  
-// axios.get('/api/roles')
-//   .then(res => {
-//     const fetchedRoles = res?.data?.data;
-//     if (Array.isArray(fetchedRoles)) {
-//       setRoles(fetchedRoles);
-//     } else {
-//       setRoles([]); // Fallback to empty array
-//       setError('No roles found.');
-//     }
-//   })
-//   .catch(() => {
-//     setRoles([]); // Prevent map error
-//     setError('Failed to load roles');
-//   });
+    getRoles()
+      .then((res) => setRoles(res.data.data))
+      .catch(() => setError('Failed to load roles'));
 
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = () => {
+    getUsers()
+      .then((res) => setUsers(res.data.data))
+      .catch(() => setError('Failed to load users'));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -72,8 +74,13 @@ const UserForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('/api/register', formData);
-      navigate('/admin/users'); // Change as needed
+      const updatedFormData = {
+        ...formData,
+        roleId: parseInt(formData.roleId, 10),
+      };
+      await registerUser(updatedFormData);
+      fetchUsers();
+      setActiveTab('view');
     } catch (err) {
       setError('User creation failed');
     } finally {
@@ -81,52 +88,162 @@ const UserForm: React.FC = () => {
     }
   };
 
-  return (
-    <div className="w-full px-6 py-8">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Add New User</h2>
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
-      <form onSubmit={handleSubmit} className="bg-white shadow rounded-xl p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <InputField icon={<User size={20} />} name="username" value={formData.username} onChange={handleChange} placeholder="Username" required />
-          <InputField icon={<Mail size={20} />} name="email" value={formData.email} onChange={handleChange} placeholder="Email" type="email" required />
-          <InputField icon={<Lock size={20} />} name="password" value={formData.password} onChange={handleChange} placeholder="Password" type="password" required />
-          
-          <div className="relative">
-            <ClipboardSignature className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <select
-              name="roleId"
-              value={formData.roleId}
-              onChange={handleChange}
-              required
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring focus:ring-green-100 text-sm text-gray-700"
-            >
-              <option value="">Select Role</option>
-              {Array.isArray(roles) && roles.map(role => (
-  <option key={role.id} value={role.id}>{role.name}</option>
-))}
+  const handleEdit = (userId: number) => {
+    navigate(`/edit-user/${userId}`);
+  };
 
-            </select>
-          </div>
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-          <InputField icon={<Globe size={20} />} name="country" value={formData.country} onChange={handleChange} placeholder="Country" />
-          <InputField icon={<Building size={20} />} name="companyName" value={formData.companyName} onChange={handleChange} placeholder="Company Name" />
-          <InputField icon={<ClipboardSignature size={20} />} name="registrationId" value={formData.registrationId} onChange={handleChange} placeholder="Registration ID" />
-          <InputField icon={<FileText size={20} />} name="cvUrl" value={formData.cvUrl} onChange={handleChange} placeholder="CV URL" type="url" />
-          <InputField icon={<Briefcase size={20} />} name="workExperience" value={formData.workExperience} onChange={handleChange} placeholder="Work Experience" />
-        </div>
-
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-        <div className="text-right">
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'username', headerName: 'Username', width: 200 },
+    { field: 'email', headerName: 'Email', width: 250 },
+    { field: 'country', headerName: 'Country', width: 150 },
+    { field: 'company_name', headerName: 'Company', width: 200 },
+    { field: 'registration_id', headerName: 'Registration ID', width: 180 },
+    { field: 'cv_url', headerName: 'CV URL', width: 200 },
+    { field: 'work_experience', headerName: 'Experience', width: 150 },
+    {
+      field: 'roles',
+      headerName: 'Role',
+      width: 150,
+      valueGetter: (params) => params.row.roles.map((r: Role) => r.name).join(', ')
+    },
+    {
+      field: 'action',
+      headerName: 'Action',
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex space-x-2">
           <button
-            type="submit"
-            disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-sm font-medium"
+            onClick={() => handleEdit(params.row.id)}
+            className="text-blue-600 hover:underline text-sm"
           >
-            {loading ? 'Saving...' : 'Create User'}
+            Edit
           </button>
         </div>
-      </form>
+      )
+    }
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-10 bg-white rounded-3xl">
+      {/* Tabs */}
+      <div className="mb-6 flex space-x-4 border-b pb-2">
+        <button
+          className={`px-4 py-2 font-medium ${activeTab === 'add' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('add')}
+        >
+          Add New User
+        </button>
+        <button
+          className={`px-4 py-2 font-medium ${activeTab === 'view' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('view')}
+        >
+          View Users
+        </button>
+      </div>
+
+      {/* Add Form */}
+      {activeTab === 'add' && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField icon={<User size={20} />} name="username" value={formData.username} onChange={handleChange} placeholder="Username" required />
+            <InputField icon={<Mail size={20} />} name="email" value={formData.email} onChange={handleChange} placeholder="Email" type="email" required />
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"><Lock size={20} /></div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Password"
+                required
+                className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 text-sm"
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            <div className="relative">
+              <ClipboardSignature className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <select
+                name="roleId"
+                value={formData.roleId}
+                onChange={handleChange}
+                required
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 text-sm"
+              >
+                <option value="">Select Role</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.id}>{role.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <InputField icon={<Globe size={20} />} name="country" value={formData.country} onChange={handleChange} placeholder="Country" />
+            <InputField icon={<Building size={20} />} name="companyName" value={formData.companyName} onChange={handleChange} placeholder="Company Name" />
+            <InputField icon={<ClipboardSignature size={20} />} name="registrationId" value={formData.registrationId} onChange={handleChange} placeholder="Registration ID" />
+            <InputField icon={<FileText size={20} />} name="cvUrl" value={formData.cvUrl} onChange={handleChange} placeholder="CV URL" type="url" />
+            <InputField icon={<Briefcase size={20} />} name="workExperience" value={formData.workExperience} onChange={handleChange} placeholder="Work Experience" />
+          </div>
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+          <div className="text-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-sm font-medium transition-all"
+            >
+              {loading ? 'Saving...' : 'Create User'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* View Users */}
+      {activeTab === 'view' && (
+        <div style={{ marginTop: '2rem' }}>
+          <h5 className="text-lg font-semibold mb-4">Registered Users</h5>
+
+          {/* Search Input */}
+          <div className="mb-4 flex items-center space-x-2 w-full md:w-1/2">
+            <Search size={20} className="text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by username or email"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            />
+          </div>
+
+          <div style={{ height: 400 }}>
+            <DataGrid
+              rows={filteredUsers}
+              columns={columns}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              pageSizeOptions={[5, 10, 20]}
+              disableRowSelectionOnClick
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -141,7 +258,9 @@ interface InputProps {
   required?: boolean;
 }
 
-const InputField: React.FC<InputProps> = ({ icon, name, value, onChange, placeholder, type = 'text', required = false }) => (
+const InputField: React.FC<InputProps> = ({
+  icon, name, value, onChange, placeholder, type = 'text', required = false
+}) => (
   <div className="relative">
     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">{icon}</div>
     <input
@@ -151,7 +270,7 @@ const InputField: React.FC<InputProps> = ({ icon, name, value, onChange, placeho
       onChange={onChange}
       placeholder={placeholder}
       required={required}
-      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring focus:ring-green-100 text-sm text-gray-700 placeholder-gray-400"
+      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 text-sm"
     />
   </div>
 );
