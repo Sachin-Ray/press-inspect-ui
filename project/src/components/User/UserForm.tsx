@@ -30,13 +30,14 @@ const UserForm: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'add' | 'view'>('add');
   const [users, setUsers] = useState<UserType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 5,
+    pageSize: 50, // changed here
   });
 
   const [formData, setFormData] = useState({
@@ -55,7 +56,7 @@ const UserForm: React.FC = () => {
     getRoles()
       .then((res) => setRoles(res.data.data))
       .catch(() => setError('Failed to load roles'));
-
+    
     fetchUsers();
   }, []);
 
@@ -70,9 +71,37 @@ const UserForm: React.FC = () => {
     setError(null);
   };
 
+  // Password validation function
+  const validatePassword = (password: string) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  // Form submission handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSuccessMessage(null); // Reset success message on each submission
+
+    // Validate the fields
+    if (!validatePassword(formData.password)) {
+      setError('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character. It must be at least 8 characters long.');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.country) {
+      setError('Country should not be empty');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.registrationId) {
+      setError('Registration ID should not be empty');
+      setLoading(false);
+      return;
+    }
+
     try {
       const updatedFormData = {
         ...formData,
@@ -80,7 +109,19 @@ const UserForm: React.FC = () => {
       };
       await registerUser(updatedFormData);
       fetchUsers();
-      setActiveTab('view');
+      // setActiveTab('view');
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        roleId: '',
+        country: '',
+        companyName: '',
+        registrationId: '',
+        cvUrl: '',
+        workExperience: ''
+      }); // Clear form data after submission
+      setSuccessMessage('User created successfully!');
     } catch (err) {
       setError('User creation failed');
     } finally {
@@ -152,7 +193,7 @@ const UserForm: React.FC = () => {
         </button>
       </div>
 
-      {/* Add Form */}
+      {/* Add User Form */}
       {activeTab === 'add' && (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,6 +243,7 @@ const UserForm: React.FC = () => {
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {successMessage && <p className="text-green-500 text-sm text-center">{successMessage}</p>}
 
           <div className="text-center">
             <button
@@ -219,7 +261,6 @@ const UserForm: React.FC = () => {
       {activeTab === 'view' && (
         <div style={{ marginTop: '2rem' }}>
           <h5 className="text-lg font-semibold mb-4">Registered Users</h5>
-
           {/* Search Input */}
           <div className="mb-4 flex items-center space-x-2 w-full md:w-1/2">
             <Search size={20} className="text-gray-400" />
@@ -238,7 +279,7 @@ const UserForm: React.FC = () => {
               columns={columns}
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
-              pageSizeOptions={[5, 10, 20]}
+              pageSizeOptions={[5, 10, 20, 50]} 
               disableRowSelectionOnClick
             />
           </div>
@@ -246,6 +287,7 @@ const UserForm: React.FC = () => {
       )}
     </div>
   );
+
 };
 
 interface InputProps {

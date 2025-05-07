@@ -81,7 +81,7 @@ const AppRoutes: React.FC = () => {
           <Route path="reports">
             <Route index element={<ReportList />} />
             <Route path="all" element={
-              <ProtectedRoute roles={['Admin']}>
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
                 <ReportList showAll />
               </ProtectedRoute>
             } />
@@ -90,7 +90,7 @@ const AppRoutes: React.FC = () => {
           </Route>
           
           <Route path="users" element={
-            <ProtectedRoute roles={['Admin']}>
+            <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
               <div className="p-6">
                 <h1 className="text-2xl font-bold mb-4">User Management</h1>
                 <p className="text-gray-600">User management functionality would be implemented here.</p>

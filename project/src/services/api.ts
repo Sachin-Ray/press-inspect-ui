@@ -36,7 +36,7 @@ api.interceptors.response.use(
 export const getRoles = () => api.get('/roles');
 
 // Register a new user
-export const registerUser = (data: any) => api.post('/users/register', data);
+export const registerUser = (data: any) => api.post('/users/create', data);
 
 // Get all users
 export const getUsers = () => api.get('/users');
