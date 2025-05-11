@@ -15,7 +15,7 @@ const ReportDetail: React.FC = () => {
   
   // Check if user has access to this report
   const hasAccess = 
-    state.user?.roles === 'Admin' || 
+    state.user?.roles === 'Admin' || state.user?.roles === 'SuperAdmin' ||
     (report && report.userId === state.user?.id);
   
   if (!report) {

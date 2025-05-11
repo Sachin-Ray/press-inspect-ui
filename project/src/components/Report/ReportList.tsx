@@ -15,7 +15,7 @@ const ReportList: React.FC<ReportListProps> = ({ showAll = false }) => {
   const [filter, setFilter] = useState('');
 
   // Filter reports based on user role and showAll prop
-  const filteredReports = showAll || state.user?.roles === 'Admin' 
+  const filteredReports = showAll || state.user?.roles === 'Admin' || state.user?.roles === 'SuperAdmin'
     ? reports 
     : reports.filter(report => report.userId === state.user?.id);
 

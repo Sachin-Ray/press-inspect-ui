@@ -29,7 +29,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       {
         id: '1',
         userId: '1',
-        inspectorName: 'Admin User',
+        inspectorName: 'Press',
         registrationId: 'ADM001',
         group: 'Press',
         model: 'SM52',
