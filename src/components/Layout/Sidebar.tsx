@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { X, LayoutDashboard, ClipboardCheck, FileText, Users, ClipboardList , Activity } from 'lucide-react';
+import { X, LayoutDashboard, ClipboardCheck, FileText, Users, ClipboardList, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
@@ -11,6 +11,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { state } = useAuth();
   const location = useLocation();
+  const [openSubmenu, setOpenSubmenu] = useState(false);
 
   // Close sidebar on route change in mobile view
   useEffect(() => {
@@ -42,7 +43,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         path: '/reports/inspectors',
         roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector']
       },
-      
       {
         name: 'Manage Users',
         icon: <Users size={20} />,
@@ -58,21 +58,41 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {
         name: 'Master Data Entry',
         icon: <ClipboardList size={20} />,
-        path: '/settings',
-        roles: ['SuperAdmin']
-      },
-      // {
-      //   name: 'Help',
-      //   icon: <HelpCircle size={20} />,
-      //   path: '/help',
-      //   roles: ['Admin', 'PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector']
-      // }
+        roles: ['Admin', 'SuperAdmin'],
+        submenu: [
+          {
+            name: 'Machine Details',
+            path: 'manage/machines'
+          },
+          {
+            name: 'Buyers',
+            path: 'manage/buyers'
+          },
+          {
+            name: 'Sellers',
+            path: 'manage/sellers'
+          },
+          {
+            name: 'Products',
+            path: '/settings/products'
+          },
+          {
+            name: 'Machines',
+            path: '/settings/machines'
+          }
+        ]
+      }
     ];
 
     return items.filter(item => item.roles.includes(role));
   };
 
   const menuItems = getMenuItems();
+
+  // Check if current path is part of the submenu
+  const isSubmenuActive = (submenuItems: any[]) => {
+    return submenuItems.some(item => location.pathname.startsWith(item.path));
+  };
 
   return (
     <>
@@ -115,19 +135,58 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <ul className="px-2 py-4">
             {menuItems.map((item, index) => (
               <li key={index} className="mb-1">
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${
-                      isActive
-                        ? 'bg-white text-[#0F52BA] font-medium'
-                        : 'text-white hover:bg-blue-700'
-                    }`
-                  }
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                </NavLink>
+                {item.submenu ? (
+                  <>
+                    <button
+                      onClick={() => setOpenSubmenu(!openSubmenu)}
+                      className={`flex items-center justify-between w-full gap-3 px-4 py-2.5 rounded-md transition-colors ${
+                        isSubmenuActive(item.submenu)
+                          ? 'bg-white text-[#0F52BA] font-medium'
+                          : 'text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.icon}
+                        <span>{item.name}</span>
+                      </div>
+                      {openSubmenu ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
+                    {openSubmenu && (
+                      <ul className="ml-4 mt-1 pl-4 border-l-2 border-blue-600">
+                        {item.submenu.map((subItem, subIndex) => (
+                          <li key={subIndex} className="mb-1">
+                            <NavLink
+                              to={subItem.path}
+                              className={({ isActive }) =>
+                                `flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
+                                  isActive
+                                    ? 'bg-blue-800 text-white font-medium'
+                                    : 'text-blue-200 hover:bg-blue-700 hover:text-white'
+                                }`
+                              }
+                            >
+                              <span>{subItem.name}</span>
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${
+                        isActive
+                          ? 'bg-white text-[#0F52BA] font-medium'
+                          : 'text-white hover:bg-blue-700'
+                      }`
+                    }
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </NavLink>
+                )}
               </li>
             ))}
           </ul>
