@@ -23,6 +23,8 @@ import UserForm from '../components/User/UserForm';
 import BuyerManagementPage from '../Admin_SuperAdmin/BuyerManagementPage';
 import SellerManagementPage from '../Admin_SuperAdmin/SellerManagementPage';
 import MachineManagementPage from '../Admin_SuperAdmin/MachineManagementPage';
+import UnitManagementPage from '../Admin_SuperAdmin/UnitManagementPage';
+import SubUnitManagementPage from '../Admin_SuperAdmin/SubUnitManagementPage';
 
 // Protected route wrapper
 interface ProtectedRouteProps {
@@ -85,6 +87,8 @@ const AppRoutes: React.FC = () => {
             <Route path="machines" element={<MachineManagementPage />} />
             <Route path="buyers" element={<BuyerManagementPage />} />
             <Route path="sellers" element={<SellerManagementPage />} />
+            <Route path="units" element={<UnitManagementPage />} />
+            <Route path="sub-units" element={<SubUnitManagementPage />} />
           </Route>
           
           <Route path="reports">

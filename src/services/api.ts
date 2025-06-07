@@ -74,4 +74,20 @@ export const createMachine  = (data: any) => api.post('/models/create/model', da
 export const updateMachineById  = (machineId: number, data: any) =>
   api.patch(`/models/update/model/${machineId}`, data);
 
+// Units APIs
+export const fetchAllUnits  = () => api.get('/units/read/units');
+
+export const createUnit  = (data: any) => api.post('/units/create/units', data);
+
+export const updateUnitById  = (unitId: number, data: any) =>
+  api.patch(`/units/update/units/${unitId}`, data);
+
+// Sub-Units APIs
+export const fetchAllSubUnits  = () => api.get('/units/read/sub-units');
+
+export const createSubUnit  = (data: any) => api.post('/units/create/sub-units', data);
+
+export const updateSubUnitById  = (subUnitId: number, data: any) =>
+  api.patch(`/units/update/sub-units/${subUnitId}`, data);
+
 export const fetchAllGroups  = () => api.get('/groups');

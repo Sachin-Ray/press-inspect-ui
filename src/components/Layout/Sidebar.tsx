@@ -73,8 +73,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             path: 'manage/sellers'
           },
           {
-            name: 'Products',
-            path: '/settings/products'
+            name: 'Units',
+            path: 'manage/units'
+          },
+          {
+            name: 'Sub-Units',
+            path: 'manage/sub-units'
           },
           {
             name: 'Machines',
