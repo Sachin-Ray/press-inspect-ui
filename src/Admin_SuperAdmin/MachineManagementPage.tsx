@@ -49,7 +49,7 @@ interface Buyer {
 
 interface Seller {
   id: number;
-  name: string;
+  companyName: string;
 }
 
 const MachineManagementPage: React.FC = () => {
@@ -87,7 +87,7 @@ const MachineManagementPage: React.FC = () => {
         ...model,
         groupName: groups.find(g => g.id === model.groupId)?.name || '',
         buyerName: buyers.find(b => b.id === model.buyerId)?.companyName || '',
-        sellerName: sellers.find(s => s.id === model.sellerId)?.name || ''
+        sellerName: sellers.find(s => s.id === model.sellerId)?.companyName || ''
       }));
       setModels(modelsWithNames);
       setFilteredModels(modelsWithNames);
@@ -392,7 +392,7 @@ const MachineManagementPage: React.FC = () => {
                   <MenuItem value={0} disabled>Select Seller</MenuItem>
                   {sellers?.map(seller => (
                     <MenuItem key={seller.id} value={seller.id}>
-                      {seller.name}
+                      {seller.companyName}
                     </MenuItem>
                   ))}
                 </Select>
