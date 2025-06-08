@@ -25,6 +25,9 @@ import SellerManagementPage from '../Admin_SuperAdmin/SellerManagementPage';
 import MachineManagementPage from '../Admin_SuperAdmin/MachineManagementPage';
 import UnitManagementPage from '../Admin_SuperAdmin/UnitManagementPage';
 import SubUnitManagementPage from '../Admin_SuperAdmin/SubUnitManagementPage';
+import ControlStationManagementPage from '../Admin_SuperAdmin/ControlStationManagementPage';
+import ColorMeasurementManagementPage from '../Admin_SuperAdmin/ColorMeasurementManagementPage';
+import GeneralInformationQuestionsPage from '../Admin_SuperAdmin/GeneralInformationQuestionsPage';
 
 // Protected route wrapper
 interface ProtectedRouteProps {
@@ -89,6 +92,9 @@ const AppRoutes: React.FC = () => {
             <Route path="sellers" element={<SellerManagementPage />} />
             <Route path="units" element={<UnitManagementPage />} />
             <Route path="sub-units" element={<SubUnitManagementPage />} />
+            <Route path="control-stations" element={<ControlStationManagementPage />} />
+            <Route path="color-measuring-devices" element={<ColorMeasurementManagementPage />} />
+            <Route path="general-questions" element={<GeneralInformationQuestionsPage />} />
           </Route>
           
           <Route path="reports">

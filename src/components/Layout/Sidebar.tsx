@@ -81,8 +81,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             path: 'manage/sub-units'
           },
           {
-            name: 'Machines',
-            path: '/settings/machines'
+            name: 'Control Station',
+            path: 'manage/control-stations'
+          },
+          {
+            name: 'Color Measuring Devices',
+            path: 'manage/color-measuring-devices'
+          },
+          {
+            name: 'General Questions',
+            path: 'manage/general-questions'
           }
         ]
       }
@@ -197,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         <div className="p-4 text-xs text-blue-300">
-          <p>© 2024 Printocare</p>
+          <p>© 2025 Printocare</p>
           <p>v1.0.0</p>
         </div>
       </aside>

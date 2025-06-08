@@ -67,12 +67,12 @@ export const updateSellerById  = (sellerId: number, data: any) =>
   api.patch(`/reports/updateSellerById/${sellerId}`, data);
 
 // Machine APIs
-export const fetchAllMachine  = () => api.get('/models/models');
+export const fetchAllMachine  = () => api.get('/models/all');
 
-export const createMachine  = (data: any) => api.post('/models/create/model', data);
+export const createMachine  = (data: any) => api.post('/models/create', data);
 
 export const updateMachineById  = (machineId: number, data: any) =>
-  api.patch(`/models/update/model/${machineId}`, data);
+  api.patch(`/models/update/${machineId}`, data);
 
 // Units APIs
 export const fetchAllUnits  = () => api.get('/units/read/units');
@@ -89,5 +89,28 @@ export const createSubUnit  = (data: any) => api.post('/units/create/sub-units',
 
 export const updateSubUnitById  = (subUnitId: number, data: any) =>
   api.patch(`/units/update/sub-units/${subUnitId}`, data);
+
+// Control Station APIs
+export const fetchAllControlStation  = () => api.get('/reports/getAll/controlStations');
+
+export const createControlStation  = (data: any) => api.post('/reports/create/controlStation', data);
+
+export const updateControlStationById  = (currentStationId: number, data: any) =>
+  api.patch(`/reports/update/controlStation/${currentStationId}`, data);
+
+// Color Measuring APIs
+export const fetchAllColorMeasuringDevices = () => api.get('/reports/getAll/colorMeasurments');
+
+export const createColorMeasuringDevice = (data: any) => api.post('/reports/create/colorMeasurments', data);
+
+export const updateColorMeasuringDeviceById  = (deviceId: number, data: any) => api.patch(`/reports/update/colorMeasuringDevice/${deviceId}`, data);
+
+// General Question APIs
+export const fetchAllGeneralInfoQuestions = () => api.get('/reports/getAll/questions');
+
+export const createGeneralInfoQuestion = (data: any) => api.post('/reports/create/generalInfoQuestion', data);
+
+export const updateGeneralInfoQuestionById  = (deviceId: number, data: any) => api.patch(`/reports/update/questions/${deviceId}`, data);
+
 
 export const fetchAllGroups  = () => api.get('/groups');

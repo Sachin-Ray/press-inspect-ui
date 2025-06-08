@@ -7,12 +7,7 @@ import {
   Box,
   Paper,
   InputAdornment,
-  Stack,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  SelectChangeEvent
+  Stack
 } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -21,135 +16,97 @@ import SearchIcon from '@mui/icons-material/Search';
 import { SaveIcon } from 'lucide-react';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import {
-  createSubUnit,
-  fetchAllSubUnits,
-  updateSubUnitById,
-  fetchAllUnits
+  createControlStation,
+  fetchAllControlStation,
+  updateControlStationById
 } from '../services/api';
 
-interface SubUnit {
+interface ControlStation {
   id: number;
-  name: string;
-  unitId: number;
+  stationName: string;
 }
 
-interface Unit {
-  id: number;
-  name: string;
-}
-
-const SubUnitManagementPage: React.FC = () => {
+const ControlStationManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'add' | 'view'>('add');
-  const [subUnits, setSubUnits] = useState<SubUnit[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [filteredSubUnits, setFilteredSubUnits] = useState<SubUnit[]>([]);
-  const [formData, setFormData] = useState<{ name: string; unitId: number }>({ name: '', unitId: 0 });
+  const [stations, setStations] = useState<ControlStation[]>([]);
+  const [filteredStations, setFilteredStations] = useState<ControlStation[]>([]);
+  const [formData, setFormData] = useState<{ stationName: string }>({ stationName: '' });
   const [isEditing, setIsEditing] = useState(false);
-  const [currentSubUnitId, setCurrentSubUnitId] = useState<number | null>(null);
+  const [currentStationId, setCurrentStationId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 5 });
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchSubUnits = async () => {
+  const fetchStations = async () => {
     setLoading(true);
     try {
-      const response = await fetchAllSubUnits();
+      const response = await fetchAllControlStation();
       const data = (response?.data?.data || []).map((item: any) => ({
         id: item.id,
-        name: item.subUnitName,
-        unitId: item.unitId || item.unit?.id,
-        unitName: item.unit?.name || '',
+        stationName: item.stationName
       }));
-
-      setSubUnits(data);
-      setFilteredSubUnits(data);
+      setStations(data);
+      setFilteredStations(data);
     } catch (error) {
-      console.error('Error fetching sub-units:', error);
-      setSubUnits([]);
-      setFilteredSubUnits([]);
+      console.error('Error fetching control stations:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUnitsList = async () => {
-    try {
-      const response = await fetchAllUnits();
-      setUnits(response?.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching units:', error);
-      setUnits([]);
-    }
-  };
-
   useEffect(() => {
-    fetchUnitsList();
-    if (activeTab === 'view') fetchSubUnits();
+    if (activeTab === 'view') fetchStations();
   }, [activeTab]);
 
-
   useEffect(() => {
-    const filtered = subUnits.filter(subUnit =>
-      (subUnit?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = stations.filter((station) =>
+      (station?.stationName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    setFilteredSubUnits(filtered);
-  }, [searchTerm, subUnits]);
-
+    setFilteredStations(filtered);
+  }, [searchTerm, stations]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
   };
 
-
-  const handleSelectChange = (e: SelectChangeEvent<number>) => {
-    const { value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      unitId: Number(value)
-    }));
-  };
-
   const handleClear = () => {
-    setFormData({ name: '', unitId: 0 });
+    setFormData({ stationName: '' });
     setIsEditing(false);
-    setCurrentSubUnitId(null);
+    setCurrentStationId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const apiData = {
+      stationName: formData.stationName
+    };
     try {
-      const apiData = {
-        name: formData.name,
-        unitId: formData.unitId
-      };
-      if (isEditing && currentSubUnitId) {
-        await updateSubUnitById(currentSubUnitId, apiData);
+      if (isEditing && currentStationId) {
+        await updateControlStationById(currentStationId, apiData);
       } else {
-        await createSubUnit(apiData);
+        await createControlStation(apiData);
       }
       handleClear();
-      if (activeTab === 'view') fetchSubUnits();
+      if (activeTab === 'view') fetchStations();
       setActiveTab('view');
     } catch (error) {
-      console.error('Error saving sub-unit:', error);
+      console.error('Error saving control station:', error);
     }
   };
 
-  const handleEdit = (subUnit: SubUnit) => {
-    setFormData({ name: subUnit.name, unitId: subUnit.unitId });
+  const handleEdit = (station: ControlStation) => {
+    setFormData({ stationName: station.stationName });
     setIsEditing(true);
-    setCurrentSubUnitId(subUnit.id);
+    setCurrentStationId(station.id);
     setActiveTab('add');
   };
 
   const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Sub-Unit Name', flex: 1, minWidth: 200 },
-    { field: 'unitName', headerName: 'Unit', flex: 1, minWidth: 200 },
+    { field: 'stationName', headerName: 'Control Station Name', flex: 1, minWidth: 200 },
     {
       field: 'actions',
       type: 'actions',
@@ -159,17 +116,17 @@ const SubUnitManagementPage: React.FC = () => {
         <GridActionsCellItem
           icon={<EditIcon />}
           label="Edit"
-          onClick={() => handleEdit(params.row as SubUnit)}
-        />,
-      ],
-    },
+          onClick={() => handleEdit(params.row as ControlStation)}
+        />
+      ]
+    }
   ];
 
   return (
     <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 800 }}>
       <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-        <Tab label={isEditing ? 'Edit Sub-Unit' : 'Add New Sub-Unit'} value="add" />
-        <Tab label="View Sub-Units" value="view" />
+        <Tab label={isEditing ? 'Edit Control Station' : 'Add New Control Station'} value="add" />
+        <Tab label="View Control Stations" value="view" />
       </Tabs>
 
       <Box sx={{ mt: 3 }}>
@@ -177,29 +134,13 @@ const SubUnitManagementPage: React.FC = () => {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Sub-Unit Name"
-              name="name"
-              value={formData.name}
+              label="Control Station Name"
+              name="stationName"
+              value={formData.stationName}
               onChange={handleInputChange}
               margin="normal"
               required
             />
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel id="unit-label">Unit</InputLabel>
-              <Select
-                labelId="unit-label"
-                name="unitId"
-                value={formData.unitId}
-                onChange={handleSelectChange}
-                label="Unit"
-              >
-                {units.map(unit => (
-                  <MenuItem key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
               {isEditing ? (
                 <>
@@ -207,7 +148,7 @@ const SubUnitManagementPage: React.FC = () => {
                     Cancel
                   </Button>
                   <Button variant="contained" color="primary" startIcon={<SaveIcon />} type="submit">
-                    Update Sub-Unit
+                    Update
                   </Button>
                 </>
               ) : (
@@ -216,7 +157,7 @@ const SubUnitManagementPage: React.FC = () => {
                     Clear
                   </Button>
                   <Button variant="contained" color="primary" type="submit">
-                    Add Sub-Unit
+                    Add
                   </Button>
                 </>
               )}
@@ -229,7 +170,7 @@ const SubUnitManagementPage: React.FC = () => {
               <TextField
                 variant="outlined"
                 size="small"
-                placeholder="Search sub-units..."
+                placeholder="Search control stations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -237,14 +178,14 @@ const SubUnitManagementPage: React.FC = () => {
                     <InputAdornment position="start">
                       <SearchIcon />
                     </InputAdornment>
-                  ),
+                  )
                 }}
                 sx={{ width: 300 }}
               />
             </Stack>
             <Box sx={{ height: 500, width: '100%' }}>
               <DataGrid
-                rows={filteredSubUnits}
+                rows={filteredStations}
                 columns={columns}
                 loading={loading}
                 paginationModel={paginationModel}
@@ -255,7 +196,7 @@ const SubUnitManagementPage: React.FC = () => {
                 getRowId={(row) => row.id}
                 sx={{
                   '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
-                  '& .MuiDataGrid-cell': { borderBottom: '1px solid #f0f0f0' },
+                  '& .MuiDataGrid-cell': { borderBottom: '1px solid #f0f0f0' }
                 }}
               />
             </Box>
@@ -266,4 +207,4 @@ const SubUnitManagementPage: React.FC = () => {
   );
 };
 
-export default SubUnitManagementPage;
+export default ControlStationManagementPage;
