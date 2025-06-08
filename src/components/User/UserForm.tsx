@@ -726,15 +726,46 @@ const UserManagementPage: React.FC = () => {
                 </Box>
 
                 <Box>
-                  <h3>Professional Information</h3>
-                  <p>Role: {selectedUser.roles.map(r => r.name).join(', ')}</p>
-                  <p>Company: {selectedUser.company_name}</p>
-                  <p>Registration ID: {selectedUser.registration_id}</p>
-                  <p>Work Experience: {selectedUser.work_experience}</p>
-                  <p>Passport Expiry: {selectedUser.passport_expiry_date}</p>
-                  <p>Status: {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
+                    <Box
+                      component="h4"
+                      sx={{
+                        fontWeight: 'bold',
+                        textDecoration: 'underline',
+                        margin: 0,
+                        fontSize: '1.08rem'
+                      }}
+                    >
+                      Professional Information
+                    </Box>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Role:</Box> {selectedUser.roles.map(r => r.name).join(', ')}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Company:</Box> {selectedUser.company_name}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Registration ID:</Box> {selectedUser.registration_id}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Work Experience:</Box> {selectedUser.work_experience}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Passport Expiry:</Box> {selectedUser.passport_expiry_date}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Status:</Box> {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
 
-                  <h3>Documents</h3>
+                  <Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Documents:</Box>
                   {selectedUser.cv_url && (
                     <Button
                       startIcon={<Download />}
