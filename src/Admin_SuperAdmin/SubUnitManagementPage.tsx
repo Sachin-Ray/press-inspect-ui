@@ -193,6 +193,7 @@ const SubUnitManagementPage: React.FC = () => {
                 onChange={handleSelectChange}
                 label="Unit"
               >
+                <MenuItem value={0} disabled>Select Unit</MenuItem>
                 {units.map(unit => (
                   <MenuItem key={unit.id} value={unit.id}>
                     {unit.name}
