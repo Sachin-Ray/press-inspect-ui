@@ -29,8 +29,9 @@ import {
 
 interface SubUnit {
   id: number;
-  name: string;
+  subUnitName: string;
   unitId: number;
+  unitName?: string;
 }
 
 interface Unit {
@@ -43,7 +44,10 @@ const SubUnitManagementPage: React.FC = () => {
   const [subUnits, setSubUnits] = useState<SubUnit[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [filteredSubUnits, setFilteredSubUnits] = useState<SubUnit[]>([]);
-  const [formData, setFormData] = useState<{ name: string; unitId: number }>({ name: '', unitId: 0 });
+  const [formData, setFormData] = useState<{ subUnitName: string; unitId: number }>({
+    subUnitName: '',
+    unitId: 0
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [currentSubUnitId, setCurrentSubUnitId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,13 +58,12 @@ const SubUnitManagementPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetchAllSubUnits();
-      const data = (response?.data?.data || []).map((item: any) => ({
+      const data: SubUnit[] = (response?.data?.data || []).map((item: any) => ({
         id: item.id,
-        name: item.subUnitName,
+        subUnitName: item.subUnitName,
         unitId: item.unitId || item.unit?.id,
-        unitName: item.unit?.name || '',
+        unitName: item.unit?.name || ''
       }));
-
       setSubUnits(data);
       setFilteredSubUnits(data);
     } catch (error) {
@@ -84,49 +87,41 @@ const SubUnitManagementPage: React.FC = () => {
 
   useEffect(() => {
     fetchUnitsList();
-    if (activeTab === 'view') fetchSubUnits();
+    if (activeTab === 'view') {
+      fetchSubUnits();
+    }
   }, [activeTab]);
 
-
   useEffect(() => {
-    const filtered = subUnits.filter(subUnit =>
-      (subUnit?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+    setFilteredSubUnits(
+      subUnits.filter(su =>
+        su.subUnitName.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     );
-
-    setFilteredSubUnits(filtered);
   }, [searchTerm, subUnits]);
-
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleSelectChange = (e: SelectChangeEvent<number>) => {
-    const { value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      unitId: Number(value)
-    }));
+    setFormData(prev => ({ ...prev, unitId: Number(e.target.value) }));
   };
 
   const handleClear = () => {
-    setFormData({ name: '', unitId: 0 });
+    setFormData({ subUnitName: '', unitId: 0 });
     setIsEditing(false);
     setCurrentSubUnitId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const apiData = {
+      subUnitName: formData.subUnitName,
+      unitId: formData.unitId
+    };
     try {
-      const apiData = {
-        name: formData.name,
-        unitId: formData.unitId
-      };
       if (isEditing && currentSubUnitId) {
         await updateSubUnitById(currentSubUnitId, apiData);
       } else {
@@ -140,34 +135,44 @@ const SubUnitManagementPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (subUnit: SubUnit) => {
-    setFormData({ name: subUnit.name, unitId: subUnit.unitId });
+  const handleEdit = (su: SubUnit) => {
+    setFormData({ subUnitName: su.subUnitName, unitId: su.unitId });
     setIsEditing(true);
-    setCurrentSubUnitId(subUnit.id);
+    setCurrentSubUnitId(su.id);
     setActiveTab('add');
   };
 
   const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Sub-Unit Name', flex: 1, minWidth: 200 },
-    { field: 'unitName', headerName: 'Unit', flex: 1, minWidth: 200 },
+    {
+      field: 'subUnitName',
+      headerName: 'Sub-Unit Name',
+      flex: 1,
+      minWidth: 200
+    },
+    {
+      field: 'unitName',
+      headerName: 'Unit',
+      flex: 1,
+      minWidth: 200
+    },
     {
       field: 'actions',
       type: 'actions',
       headerName: 'Actions',
       width: 100,
-      getActions: (params) => [
+      getActions: params => [
         <GridActionsCellItem
           icon={<EditIcon />}
           label="Edit"
           onClick={() => handleEdit(params.row as SubUnit)}
-        />,
-      ],
-    },
+        />
+      ]
+    }
   ];
 
   return (
     <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 800 }}>
-      <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
         <Tab label={isEditing ? 'Edit Sub-Unit' : 'Add New Sub-Unit'} value="add" />
         <Tab label="View Sub-Units" value="view" />
       </Tabs>
@@ -178,12 +183,13 @@ const SubUnitManagementPage: React.FC = () => {
             <TextField
               fullWidth
               label="Sub-Unit Name"
-              name="name"
-              value={formData.name}
+              name="subUnitName"
+              value={formData.subUnitName}
               onChange={handleInputChange}
               margin="normal"
               required
             />
+
             <FormControl fullWidth margin="normal" required>
               <InputLabel id="unit-label">Unit</InputLabel>
               <Select
@@ -193,27 +199,43 @@ const SubUnitManagementPage: React.FC = () => {
                 onChange={handleSelectChange}
                 label="Unit"
               >
-                <MenuItem value={0} disabled>Select Unit</MenuItem>
-                {units.map(unit => (
-                  <MenuItem key={unit.id} value={unit.id}>
-                    {unit.name}
+                <MenuItem value={0} disabled>
+                  Select Unit
+                </MenuItem>
+                {units.map(u => (
+                  <MenuItem key={u.id} value={u.id}>
+                    {u.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
+
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
               {isEditing ? (
                 <>
-                  <Button variant="outlined" startIcon={<CancelIcon />} onClick={handleClear}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CancelIcon />}
+                    onClick={handleClear}
+                  >
                     Cancel
                   </Button>
-                  <Button variant="contained" color="primary" startIcon={<SaveIcon />} type="submit">
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<SaveIcon />}
+                    type="submit"
+                  >
                     Update Sub-Unit
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="outlined" startIcon={<ClearIcon />} onClick={handleClear}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ClearIcon />}
+                    onClick={handleClear}
+                  >
                     Clear
                   </Button>
                   <Button variant="contained" color="primary" type="submit">
@@ -225,24 +247,30 @@ const SubUnitManagementPage: React.FC = () => {
           </form>
         ) : (
           <>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Box></Box>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={2}
+            >
+              <Box />
               <TextField
                 variant="outlined"
                 size="small"
                 placeholder="Search sub-units..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
                       <SearchIcon />
                     </InputAdornment>
-                  ),
+                  )
                 }}
                 sx={{ width: 300 }}
               />
             </Stack>
+
             <Box sx={{ height: 500, width: '100%' }}>
               <DataGrid
                 rows={filteredSubUnits}
@@ -253,10 +281,10 @@ const SubUnitManagementPage: React.FC = () => {
                 pageSizeOptions={[5, 10, 20]}
                 pagination
                 disableRowSelectionOnClick
-                getRowId={(row) => row.id}
+                getRowId={row => row.id}
                 sx={{
                   '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
-                  '& .MuiDataGrid-cell': { borderBottom: '1px solid #f0f0f0' },
+                  '& .MuiDataGrid-cell': { borderBottom: '1px solid #f0f0f0' }
                 }}
               />
             </Box>
