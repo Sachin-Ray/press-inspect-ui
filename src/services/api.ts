@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:4000/api',
-  // baseURL: 'https://press-inspect-api.onrender.com/api',
+  // baseURL: 'http://localhost:4000/api',
+  baseURL: 'https://press-inspect-api.onrender.com/api',
   
   timeout: 10000,
   headers: {
