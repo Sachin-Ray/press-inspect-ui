@@ -39,7 +39,7 @@ export const getRoles = () => api.get('/roles');
 
 export const getCountries = () => api.get('/country/findAll');
 
-export const updateUserStatus = (userId: number, newStatus: boolean) => api.patch(`/users/${userId}/status`, { isActive: newStatus });
+export const updateUserStatus = (userId: number, newStatus: boolean) => api.patch(`/users/update/user/status/${userId}`, { is_active: newStatus });
 
 // Register a new user
 export const registerUser = (data: any) => api.post('/users/create', data);

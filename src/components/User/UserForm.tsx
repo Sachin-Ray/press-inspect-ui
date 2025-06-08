@@ -1,18 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import {
-  Mail, Lock, User, Briefcase, FileText, Globe,
-  Building, ClipboardSignature, Eye, EyeOff, Search,
-  MapPin, Home, CreditCard, Phone, X, Edit, ChevronLeft,
-  Download, File, Image
-} from 'lucide-react';
-import { getRoles, registerUser, getUsers, getCountries, updateUserStatus } from '../../services/api.ts';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import Switch from '@mui/material/Switch';
-import Modal from '@mui/material/Modal';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import { styled } from '@mui/material/styles';
+  Tabs,
+  Tab,
+  Button,
+  TextField,
+  Box,
+  Paper,
+  InputAdornment,
+  Stack,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  SelectChangeEvent,
+  Switch,
+  Modal
+} from '@mui/material';
+import CancelIcon from '@mui/icons-material/Cancel';
+import ClearIcon from '@mui/icons-material/Clear';
+import EditIcon from '@mui/icons-material/Edit';
+import SearchIcon from '@mui/icons-material/Search';
+import { SaveIcon, Eye, Download } from 'lucide-react';
+import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import {
+  getRoles,
+  registerUser,
+  getUsers,
+  getCountries,
+  updateUserStatus
+} from '../../services/api';
 
 interface Role {
   id: number;
@@ -27,11 +43,10 @@ interface Country {
 
 interface UserType {
   id: number;
-  firstName: string;
-  lastName: string;
-  passportNumber: string;
+  first_name: string;
+  last_name: string;
+  passport_number: string;
   email: string;
-  joiningDate: string;
   address: string;
   city: string;
   state: string;
@@ -41,40 +56,36 @@ interface UserType {
     id: number;
     name: string;
   };
-  companyName: string | null;
-  registrationId: string | null;
-  cvUrl: string | null;
-  workExperience: string | null;
-  isActive: boolean;
+  company_name: string | null;
+  registration_id: string | null;
+  cv_url: string | null;
+  work_experience: string | null;
+  is_active: boolean;
   roles: Role[];
   mobile: string;
-  passportExpiryDate: string;
-  passportAttachment: string | null;
-  photoOfEngineer: string | null;
+  passport_expiry_date: string;
+  passport_attachment: string | null;
+  joining_date: string;
+  photo_of_engineer: string | null;
 }
 
-const UserForm: React.FC = () => {
-  const navigate = useNavigate();
+const UserManagementPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'add' | 'view'>('add');
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<'add' | 'view'>('add');
-  const [users, setUsers] = useState<UserType[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 5 });
   const [searchTerm, setSearchTerm] = useState('');
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [currentEditId, setCurrentEditId] = useState<number | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [cvFile, setCvFile] = useState<File | null>(null);
-  const [passportFile, setPassportFile] = useState<File | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
+  const [fileUploads, setFileUploads] = useState({
+    cvFile: null as File | null,
+    passportFile: null as File | null,
+    photoFile: null as File | null
   });
 
   const [formData, setFormData] = useState({
@@ -97,128 +108,76 @@ const UserForm: React.FC = () => {
     passportExpiryDate: '',
     passportAttachment: '',
     photoOfEngineer: '',
-    joiningDate: new Date().toISOString().split('T')[0]
+    joiningDate: '',
+    isActive: true
   });
 
   useEffect(() => {
-    // Fetch roles and countries
-    Promise.all([getRoles(), getCountries()])
-      .then(([rolesRes, countriesRes]) => {
-        setRoles(rolesRes.data.data);
-        setCountries(countriesRes.data.data);
-      })
-      .catch(() => setError('Failed to load initial data'));
-    
-    fetchUsers();
-  }, []);
+    fetchInitialData();
+    if (activeTab === 'view') fetchUsers();
+  }, [activeTab]);
 
-  const fetchUsers = () => {
-    getUsers()
-      .then((res) => setUsers(res.data.data))
-      .catch(() => setError('Failed to load users'));
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(null);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cv' | 'passport' | 'photo') => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      switch (type) {
-        case 'cv':
-          setCvFile(file);
-          setFormData({...formData, cvUrl: URL.createObjectURL(file)});
-          break;
-        case 'passport':
-          setPassportFile(file);
-          setFormData({...formData, passportAttachment: URL.createObjectURL(file)});
-          break;
-        case 'photo':
-          setPhotoFile(file);
-          setFormData({...formData, photoOfEngineer: URL.createObjectURL(file)});
-          break;
-      }
-    }
-  };
-
-  const validatePassword = (password: string) => {
-    if (isEditMode && !password) return true; // Skip validation if editing and password not changed
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    return passwordRegex.test(password);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setSuccessMessage(null);
-
-    if (!validatePassword(formData.password)) {
-      setError('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character. It must be at least 8 characters long.');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.countryId) {
-      setError('Country is required');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.pincode) {
-      setError('Pincode is required');
-      setLoading(false);
-      return;
-    }
-
+  const fetchInitialData = async () => {
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        passportNumber: formData.passportNumber,
-        email: formData.email,
-        password: formData.password,
-        roleId: parseInt(formData.roleId, 10),
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        countryId: parseInt(formData.countryId, 10),
-        mobile: formData.mobile,
-        companyName: formData.companyName,
-        registrationId: formData.registrationId,
-        cvUrl: formData.cvUrl,
-        workExperience: formData.workExperience,
-        passportExpiryDate: formData.passportExpiryDate,
-        passportAttachment: formData.passportAttachment,
-        photoOfEngineer: formData.photoOfEngineer,
-        joiningDate: formData.joiningDate
-      };
+      const [rolesRes, countriesRes] = await Promise.all([getRoles(), getCountries()]);
+      setRoles(rolesRes.data.data);
+      setCountries(countriesRes.data.data);
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+    }
+  };
 
-      // Here you would typically upload files and get their URLs
-      // For now, we'll just use the local URLs
-      
-      if (isEditMode && currentEditId) {
-        // Call update API here
-        // await updateUser(currentEditId, payload);
-        setSuccessMessage('User updated successfully!');
-      } else {
-        await registerUser(payload);
-        setSuccessMessage('User created successfully!');
-      }
-      
-      fetchUsers();
-      resetForm();
-      setActiveTab('view');
-    } catch (err: any) {
-      setError(err.response?.data?.message || (isEditMode ? 'User update failed' : 'User creation failed'));
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await getUsers();
+      setUsers(response.data.data);
+      setFilteredUsers(response.data.data);
+    } catch (error) {
+      console.error('Failed to load users:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
+  useEffect(() => {
+    const filtered = users.filter(user =>
+      `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cv' | 'passport' | 'photo') => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const fileUrl = URL.createObjectURL(file);
+
+      setFileUploads(prev => ({
+        ...prev,
+        [`${type}File`]: file
+      }));
+
+      setFormData(prev => ({
+        ...prev,
+        [`${type}Url`]: fileUrl,
+        ...(type === 'passport' ? { passportAttachment: fileUrl } : {}),
+        ...(type === 'photo' ? { photoOfEngineer: fileUrl } : {})
+      }));
+    }
+  };
+
+  const handleClear = () => {
     setFormData({
       firstName: '',
       lastName: '',
@@ -239,26 +198,83 @@ const UserForm: React.FC = () => {
       passportExpiryDate: '',
       passportAttachment: '',
       photoOfEngineer: '',
-      joiningDate: new Date().toISOString().split('T')[0]
+      joiningDate: '',
+      isActive: true
     });
-    setCvFile(null);
-    setPassportFile(null);
-    setPhotoFile(null);
-    setIsEditMode(false);
-    setCurrentEditId(null);
+    setFileUploads({
+      cvFile: null,
+      passportFile: null,
+      photoFile: null
+    });
+    setIsEditing(false);
+    setCurrentUserId(null);
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+  const validatePassword = (password: string) => {
+    if (isEditing && !password) return true;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (!validatePassword(formData.password)) {
+      alert('Password must contain at least one uppercase, one lowercase, one number, and one special character (8 chars min)');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        roleId: parseInt(formData.roleId, 10),
+        passportNumber: formData.passportNumber,
+        email: formData.email,
+        mobile: formData.mobile,
+        password: formData.password,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+        countryId: parseInt(formData.countryId, 10),
+        companyName: formData.companyName,
+        registrationId: formData.registrationId,
+        cvUrl: formData.cvUrl,
+        workExperience: formData.workExperience,
+        passportExpiryDate: formData.passportExpiryDate,
+        passportAttachment: formData.passportAttachment,
+        photoOfEngineer: formData.photoOfEngineer,
+        joiningDate: formData.joiningDate ? new Date(formData.joiningDate).toISOString() : null,
+        is_active: formData.isActive
+      };
+
+      if (isEditing && currentUserId) {
+        // await updateUser(currentUserId, payload);
+      } else {
+        await registerUser(payload);
+      }
+
+      handleClear();
+      fetchUsers();
+      setActiveTab('view');
+    } catch (error) {
+      console.error('Error saving user:', error);
+      alert('Failed to save user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (user: UserType) => {
     setFormData({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      passportNumber: user.passportNumber,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      passportNumber: user.passport_number,
       email: user.email,
-      password: '', // Don't pre-fill password
+      password: '',
       roleId: user.roles[0]?.id.toString() || '',
       address: user.address,
       city: user.city,
@@ -266,17 +282,18 @@ const UserForm: React.FC = () => {
       pincode: user.pincode,
       countryId: user.countryId.toString(),
       mobile: user.mobile,
-      companyName: user.companyName || '',
-      registrationId: user.registrationId || '',
-      cvUrl: user.cvUrl || '',
-      workExperience: user.workExperience || '',
-      passportExpiryDate: user.passportExpiryDate || '',
-      passportAttachment: user.passportAttachment || '',
-      photoOfEngineer: user.photoOfEngineer || '',
-      joiningDate: user.joiningDate
+      companyName: user.company_name || '',
+      registrationId: user.registration_id || '',
+      cvUrl: user.cv_url || '',
+      workExperience: user.work_experience || '',
+      passportExpiryDate: user.passport_expiry_date || '',
+      passportAttachment: user.passport_attachment || '',
+      photoOfEngineer: user.photo_of_engineer || '',
+      joiningDate: user.joining_date ? user.joining_date.split('T')[0] : '',
+      isActive: user.is_active
     });
-    setIsEditMode(true);
-    setCurrentEditId(user.id);
+    setIsEditing(true);
+    setCurrentUserId(user.id);
     setActiveTab('add');
   };
 
@@ -289,80 +306,60 @@ const UserForm: React.FC = () => {
     try {
       await updateUserStatus(userId, newStatus);
       fetchUsers();
-      setSuccessMessage(`User ${newStatus ? 'activated' : 'deactivated'} successfully!`);
-    } catch (err) {
-      setError('Failed to update user status');
+    } catch (error) {
+      console.error('Failed to update user status:', error);
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const term = searchTerm.toLowerCase();
-    return (
-      user.firstName?.toLowerCase()?.includes(term) ||
-      user.lastName?.toLowerCase()?.includes(term) ||
-      user.email?.toLowerCase()?.includes(term)
-    );
-  });
-
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
-    { 
-      field: 'name', 
-      headerName: 'Name', 
-      width: 180,
-      valueGetter: (params) => `${params.row.firstName} ${params.row.lastName}`,
-      renderCell: (params) => (
-        <div className="font-medium">
-          {params.row.firstName} {params.row.lastName}
-        </div>
-      )
+    {
+      field: 'name',
+      headerName: 'Name',
+      flex: 1,
+      valueGetter: (params) => `${params.row.first_name} ${params.row.last_name}`
     },
-    { field: 'email', headerName: 'Email', width: 220 },
-    { 
-      field: 'role', 
-      headerName: 'Role', 
-      width: 150,
+    { field: 'email', headerName: 'Email', flex: 1 },
+    {
+      field: 'role',
+      headerName: 'Role',
+      flex: 1,
       valueGetter: (params) => params.row.roles.map((r: Role) => r.name).join(', ')
     },
-    { 
-      field: 'isActive', 
-      headerName: 'Status', 
-      width: 120,
+    {
+      field: 'isActive',
+      headerName: 'Active Status',
+      width: 180,
       renderCell: (params) => (
-        <div className="flex items-center">
-          <span className={`mr-2 text-sm ${params.value ? 'text-green-600' : 'text-red-600'}`}>
-            {params.value ? 'Active' : 'Inactive'}
-          </span>
+        <Box display="flex" alignItems="center" gap={1}>
           <Switch
-            checked={params.value}
+            checked={params.row.is_active}
             onChange={(e) => handleStatusChange(params.row.id, e.target.checked)}
             color="success"
-            size="small"
           />
-        </div>
-      )
+          <span>{params.row.is_active ? 'Active' : 'Inactive'}</span>
+        </Box>
+      ),
+      sortable: false,
+      filterable: false
     },
     {
       field: 'actions',
+      type: 'actions',
       headerName: 'Actions',
       width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex space-x-2">
-          <button
-            onClick={() => handleView(params.row)}
-            className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
-          >
-            <Eye size={16} className="mr-1" /> View
-          </button>
-          <button
-            onClick={() => handleEdit(params.row)}
-            className="text-green-600 hover:text-green-800 text-sm flex items-center"
-          >
-            <Edit size={16} className="mr-1" /> Edit
-          </button>
-        </div>
-      )
+      getActions: (params) => [
+        <GridActionsCellItem
+          icon={<EditIcon />}
+          label="Edit"
+          onClick={() => handleEdit(params.row as UserType)}
+        />,
+        <GridActionsCellItem
+          icon={<Eye size={20} />}
+          label="View"
+          onClick={() => handleView(params.row as UserType)}
+        />
+      ]
     }
   ];
 
@@ -376,500 +373,413 @@ const UserForm: React.FC = () => {
     bgcolor: 'background.paper',
     boxShadow: 24,
     p: 4,
-    borderRadius: 2,
-    maxHeight: '90vh',
-    overflowY: 'auto'
+    borderRadius: 2
   };
 
-  const InputField = styled('input')({
-    width: '100%',
-    padding: '0.75rem',
-    paddingLeft: '2.5rem',
-    borderRadius: '0.75rem',
-    border: '1px solid #e5e7eb',
-    '&:focus': {
-      outline: 'none',
-      borderColor: '#16a34a',
-      boxShadow: '0 0 0 2px rgba(22, 163, 74, 0.2)'
-    }
-  });
-
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 bg-white rounded-3xl shadow-sm">
-      {/* Tabs */}
-      <div className="mb-6 flex space-x-4 border-b pb-2">
-        <button
-          className={`px-4 py-2 font-medium flex items-center ${activeTab === 'add' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
-          onClick={() => {
-            setActiveTab('add');
-            if (isEditMode) resetForm();
-          }}
-        >
-          {isEditMode ? (
-            <>
-              <ChevronLeft size={18} className="mr-1" />
-              Back to Add
-            </>
-          ) : (
-            'Add New User'
-          )}
-        </button>
-        <button
-          className={`px-4 py-2 font-medium ${activeTab === 'view' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('view')}
-        >
-          View Users
-        </button>
-      </div>
+    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 1200 }}>
+      <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+        <Tab label={isEditing ? 'Edit User' : 'Add New User'} value="add" />
+        <Tab label="View Users" value="view" />
+      </Tabs>
 
-      {/* Add/Edit User Form */}
-      {activeTab === 'add' && (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">
-              {isEditMode ? 'Edit User' : 'Create New User'}
-            </h2>
-            {isEditMode && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-gray-500 hover:text-gray-700 flex items-center text-sm"
-              >
-                <X size={16} className="mr-1" /> Cancel Edit
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+      <Box sx={{ mt: 3 }}>
+        {activeTab === 'add' ? (
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+              <TextField
+                fullWidth
+                label="First Name"
                 name="firstName"
                 value={formData.firstName}
-                onChange={handleChange}
-                placeholder="First Name"
+                onChange={handleInputChange}
+                margin="normal"
                 required
               />
-            </div>
-
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Last Name"
                 name="lastName"
                 value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Last Name"
+                onChange={handleInputChange}
+                margin="normal"
                 required
               />
-            </div>
-
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Passport Number"
                 name="passportNumber"
                 value={formData.passportNumber}
-                onChange={handleChange}
-                placeholder="Passport Number"
+                onChange={handleInputChange}
+                margin="normal"
                 required
               />
-            </div>
-
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Email"
                 name="email"
                 type="email"
                 value={formData.email}
-                onChange={handleChange}
-                placeholder="Email"
+                onChange={handleInputChange}
+                margin="normal"
                 required
               />
-            </div>
-
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
-                type={showPassword ? 'text' : 'password'}
+              <TextField
+                fullWidth
+                label={isEditing ? 'New Password (leave blank to keep current)' : 'Password'}
                 name="password"
+                type="password"
                 value={formData.password}
-                onChange={handleChange}
-                placeholder={isEditMode ? 'New Password (leave blank to keep current)' : 'Password'}
-                required={!isEditMode}
+                onChange={handleInputChange}
+                margin="normal"
+                required={!isEditing}
               />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            <div className="relative">
-              <ClipboardSignature className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <select
-                name="roleId"
-                value={formData.roleId}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 text-sm"
-              >
-                <option value="">Select Role</option>
-                {roles.map(role => (
-                  <option key={role.id} value={role.id}>{role.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="relative">
-              <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Role</InputLabel>
+                <Select
+                  name="roleId"
+                  value={formData.roleId}
+                  onChange={handleSelectChange}
+                  label="Role"
+                >
+                  {roles.map(role => (
+                    <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Address"
                 name="address"
                 value={formData.address}
-                onChange={handleChange}
-                placeholder="Address"
+                onChange={handleInputChange}
+                margin="normal"
               />
-            </div>
-
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="City"
                 name="city"
                 value={formData.city}
-                onChange={handleChange}
-                placeholder="City"
+                onChange={handleInputChange}
+                margin="normal"
                 required
               />
-            </div>
-
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="State"
                 name="state"
                 value={formData.state}
-                onChange={handleChange}
-                placeholder="State"
+                onChange={handleInputChange}
+                margin="normal"
               />
-            </div>
-
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Pincode"
                 name="pincode"
                 value={formData.pincode}
-                onChange={handleChange}
-                placeholder="Pincode"
+                onChange={handleInputChange}
+                margin="normal"
                 required
               />
-            </div>
-
-            <div className="relative">
-              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <select
-                name="countryId"
-                value={formData.countryId}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 text-sm"
-              >
-                <option value="">Select Country</option>
-                {countries.map(country => (
-                  <option key={country.id} value={country.id}>{country.code}-{country.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Country</InputLabel>
+                <Select
+                  name="countryId"
+                  value={formData.countryId}
+                  onChange={handleSelectChange}
+                  label="Country"
+                >
+                  {countries.map(country => (
+                    <MenuItem key={country.id} value={country.id}>
+                      {country.code} - {country.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Mobile"
                 name="mobile"
                 value={formData.mobile}
-                onChange={handleChange}
-                placeholder="Mobile Number"
+                onChange={handleInputChange}
+                margin="normal"
               />
-            </div>
-
-            <div className="relative">
-              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Company Name"
                 name="companyName"
                 value={formData.companyName}
-                onChange={handleChange}
-                placeholder="Company Name"
+                onChange={handleInputChange}
+                margin="normal"
               />
-            </div>
-
-            <div className="relative">
-              <ClipboardSignature className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Registration ID"
                 name="registrationId"
                 value={formData.registrationId}
-                onChange={handleChange}
-                placeholder="Registration ID"
+                onChange={handleInputChange}
+                margin="normal"
               />
-            </div>
-
-            <div className="relative">
-              <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <div className="flex items-center">
-                <InputField
-                  type="text"
-                  value={cvFile?.name || (formData.cvUrl ? 'CV uploaded' : '')}
-                  placeholder="Upload CV (PDF)"
-                  readOnly
-                  className="flex-1"
-                />
-                <label className="ml-2 px-3 py-2 bg-green-600 text-white rounded-lg cursor-pointer text-sm hover:bg-green-700 transition">
-                  Browse
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => handleFileChange(e, 'cv')}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <InputField
+              <TextField
+                fullWidth
+                label="Work Experience"
                 name="workExperience"
                 value={formData.workExperience}
-                onChange={handleChange}
-                placeholder="Work Experience"
+                onChange={handleInputChange}
+                margin="normal"
               />
-            </div>
+              <TextField
+                fullWidth
+                label="Passport Expiry Date"
+                name="passportExpiryDate"
+                type="date"
+                value={formData.passportExpiryDate}
+                onChange={handleInputChange}
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
 
-            <div className="relative">
-              <File className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <div className="flex items-center">
-                <InputField
-                  type="text"
-                  value={passportFile?.name || (formData.passportAttachment ? 'Passport uploaded' : '')}
-                  placeholder="Upload Passport (PDF)"
-                  readOnly
-                  className="flex-1"
+              <TextField
+                fullWidth
+                label="Joining Date"
+                name="joiningDate"
+                type="date"
+                value={formData.joiningDate}
+                onChange={handleInputChange}
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+
+              {/* File Upload Fields */}
+              <Box>
+                <InputLabel>CV (PDF)</InputLabel>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleFileChange(e, 'cv')}
                 />
-                <label className="ml-2 px-3 py-2 bg-green-600 text-white rounded-lg cursor-pointer text-sm hover:bg-green-700 transition">
-                  Browse
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => handleFileChange(e, 'passport')}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
+                {formData.cvUrl && (
+                  <Button
+                    startIcon={<Download />}
+                    onClick={() => window.open(formData.cvUrl, '_blank')}
+                  >
+                    View Current CV
+                  </Button>
+                )}
+              </Box>
 
-            <div className="relative">
-              <Image className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <div className="flex items-center">
-                <InputField
-                  type="text"
-                  value={photoFile?.name || (formData.photoOfEngineer ? 'Photo uploaded' : '')}
-                  placeholder="Upload Photo (JPG/PNG)"
-                  readOnly
-                  className="flex-1"
+              <Box>
+                <InputLabel>Passport Attachment</InputLabel>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'passport')}
                 />
-                <label className="ml-2 px-3 py-2 bg-green-600 text-white rounded-lg cursor-pointer text-sm hover:bg-green-700 transition">
-                  Browse
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, 'photo')}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
+                {formData.passportAttachment && (
+                  <Button
+                    startIcon={<Download />}
+                    onClick={() => window.open(formData.passportAttachment, '_blank')}
+                  >
+                    View Current Passport
+                  </Button>
+                )}
+              </Box>
 
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          {successMessage && <p className="text-green-500 text-sm text-center">{successMessage}</p>}
+              <Box>
+                <InputLabel>Engineer Photo</InputLabel>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'photo')}
+                />
+                {formData.photoOfEngineer && (
+                  <Button
+                    startIcon={<Download />}
+                    onClick={() => window.open(formData.photoOfEngineer, '_blank')}
+                  >
+                    View Current Photo
+                  </Button>
+                )}
+              </Box>
+            </Box>
 
-          <div className="text-center pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center"
-            >
-              {loading ? (
-                'Processing...'
-              ) : isEditMode ? (
-                'Update User'
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+              {isEditing ? (
+                <>
+                  <Button variant="outlined" startIcon={<CancelIcon />} onClick={handleClear}>
+                    Cancel
+                  </Button>
+                  <Button variant="contained" color="primary" startIcon={<SaveIcon />} type="submit" disabled={loading}>
+                    Update User
+                  </Button>
+                </>
               ) : (
-                'Create User'
+                <>
+                  <Button variant="outlined" startIcon={<ClearIcon />} onClick={handleClear}>
+                    Clear
+                  </Button>
+                  <Button variant="contained" color="primary" type="submit" disabled={loading}>
+                    Add User
+                  </Button>
+                </>
               )}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* View Users */}
-      {activeTab === 'view' && (
-        <div className="mt-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Registered Users</h2>
-            <div className="relative w-full md:w-1/3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
+            </Box>
+          </form>
+        ) : (
+          <>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+              <Box></Box>
+              <TextField
+                variant="outlined"
+                size="small"
+                placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name or email"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 text-sm"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  )
+                }}
+                sx={{ width: 300 }}
               />
-            </div>
-          </div>
+            </Stack>
+            <Box sx={{ height: 500, width: '100%' }}>
+              <DataGrid
+                rows={filteredUsers}
+                columns={columns}
+                loading={loading}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                pageSizeOptions={[5, 10, 20]}
+                pagination
+                disableRowSelectionOnClick
+                getRowId={(row) => row.id}
+                sx={{
+                  '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
+                  '& .MuiDataGrid-cell': { borderBottom: '1px solid #f0f0f0' }
+                }}
+              />
+            </Box>
+          </>
+        )}
+      </Box>
 
-          <div style={{ height: 600, width: '100%' }}>
-            <DataGrid
-              rows={filteredUsers}
-              columns={columns}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              pageSizeOptions={[5, 10, 25, 50]}
-              disableRowSelectionOnClick
-              sx={{
-                '& .MuiDataGrid-cell': {
-                  padding: '8px 16px'
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '12px 12px 0 0'
-                },
-                '& .MuiDataGrid-virtualScroller': {
-                  backgroundColor: 'white'
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* View User Modal */}
-      <Modal
-        open={viewModalOpen}
-        onClose={() => setViewModalOpen(false)}
-        aria-labelledby="user-details-modal"
-        aria-describedby="user-details-description"
-      >
+      <Modal open={viewModalOpen} onClose={() => setViewModalOpen(false)}>
         <Box sx={modalStyle}>
           {selectedUser && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  {selectedUser.firstName} {selectedUser.lastName}
-                </h2>
-                <button
-                  onClick={() => setViewModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X size={24} />
-                </button>
-              </div>
+            <>
+              <Box  sx={{ display: 'flex', justifyContent: 'space-between',fontWeight: 'bold', alignItems: 'center', mb: 2,fontSize: '1.5rem' }}>
+                <h2>{selectedUser.first_name} {selectedUser.last_name}</h2>
+                <Button onClick={() => setViewModalOpen(false)}><CancelIcon /></Button>
+              </Box>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium text-gray-800 border-b pb-2">Personal Information</h3>
-                  <DetailItem label="Email" value={selectedUser.email} icon={<Mail size={16} />} />
-                  <DetailItem label="Mobile" value={selectedUser.mobile} icon={<Phone size={16} />} />
-                  <DetailItem label="Passport Number" value={selectedUser.passportNumber} icon={<CreditCard size={16} />} />
-                  <DetailItem label="Address" value={selectedUser.address} icon={<Home size={16} />} />
-                  <DetailItem label="City" value={selectedUser.city} icon={<MapPin size={16} />} />
-                  <DetailItem label="State" value={selectedUser.state} icon={<MapPin size={16} />} />
-                  <DetailItem label="Pincode" value={selectedUser.pincode} icon={<MapPin size={16} />} />
-                  <DetailItem label="Country" value={selectedUser.country?.name} icon={<Globe size={16} />} />
-                </div>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                <Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                    <Box
+                      component="h4"
+                      sx={{
+                        fontWeight: 'bold',
+                        textDecoration: 'underline',
+                        margin: 0,
+                        fontSize: '1.08rem'
+                      }}
+                    >
+                      Personal Information
+                    </Box>
+                  </Box>
 
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium text-gray-800 border-b pb-2">Professional Information</h3>
-                  <DetailItem label="Role" value={selectedUser.roles.map(r => r.name).join(', ')} icon={<ClipboardSignature size={16} />} />
-                  <DetailItem label="Company" value={selectedUser.companyName} icon={<Building size={16} />} />
-                  <DetailItem label="Registration ID" value={selectedUser.registrationId} icon={<ClipboardSignature size={16} />} />
-                  <DetailItem label="Work Experience" value={selectedUser.workExperience} icon={<Briefcase size={16} />} />
-                  <DetailItem label="Joining Date" value={selectedUser.joiningDate} icon={<FileText size={16} />} />
-                  <DetailItem label="Status" value={selectedUser.isActive ? 'Active' : 'Inactive'} icon={selectedUser.isActive ? (
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  ) : (
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  )} />
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Email:</Box> {selectedUser.email}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Mobile:</Box> {selectedUser.mobile}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Passport:</Box> {selectedUser.passport_number ?? 'For Now No Passport'}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Address: </Box>{selectedUser.address}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>City:</Box> {selectedUser.city}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>State:</Box> {selectedUser.state}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Pincode:</Box> {selectedUser.pincode}</p>
+                  <p><Box
+                    sx={{
+                      fontWeight: 'bold'
+                    }}>Country:</Box> {selectedUser.country?.name}</p>
+                </Box>
 
-                  <div className="pt-4">
-                    <h3 className="text-lg font-medium text-gray-800 border-b pb-2">Documents</h3>
-                    <div className="space-y-3 mt-2">
-                      {selectedUser.cvUrl && (
-                        <DocumentItem 
-                          label="CV" 
-                          url={selectedUser.cvUrl} 
-                          icon={<FileText size={16} />} 
-                        />
-                      )}
-                      {selectedUser.passportAttachment && (
-                        <DocumentItem 
-                          label="Passport" 
-                          url={selectedUser.passportAttachment} 
-                          icon={<File size={16} />} 
-                        />
-                      )}
-                      {selectedUser.photoOfEngineer && (
-                        <DocumentItem 
-                          label="Photo" 
-                          url={selectedUser.photoOfEngineer} 
-                          icon={<Image size={16} />} 
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <Box>
+                  <h3>Professional Information</h3>
+                  <p>Role: {selectedUser.roles.map(r => r.name).join(', ')}</p>
+                  <p>Company: {selectedUser.company_name}</p>
+                  <p>Registration ID: {selectedUser.registration_id}</p>
+                  <p>Work Experience: {selectedUser.work_experience}</p>
+                  <p>Passport Expiry: {selectedUser.passport_expiry_date}</p>
+                  <p>Status: {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
 
-              <div className="pt-4 flex justify-end">
-                <button
+                  <h3>Documents</h3>
+                  {selectedUser.cv_url && (
+                    <Button
+                      startIcon={<Download />}
+                      onClick={() => window.open(selectedUser.cv_url || '', '_blank')}
+                    >
+                      Download CV
+                    </Button>
+                  )}
+                  {selectedUser.passport_attachment && (
+                    <Button
+                      startIcon={<Download />}
+                      onClick={() => window.open(selectedUser.passport_attachment || '', '_blank')}
+                    >
+                      Download Passport
+                    </Button>
+                  )}
+                  {selectedUser.photo_of_engineer && (
+                    <Button
+                      startIcon={<Download />}
+                      onClick={() => window.open(selectedUser.photo_of_engineer || '', '_blank')}
+                    >
+                      Download Photo
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  startIcon={<EditIcon />}
                   onClick={() => {
                     setViewModalOpen(false);
                     handleEdit(selectedUser);
                   }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center"
                 >
-                  <Edit size={16} className="mr-2" /> Edit User
-                </button>
-              </div>
-            </div>
+                  Edit User
+                </Button>
+              </Box>
+            </>
           )}
         </Box>
       </Modal>
-    </div>
+    </Paper>
   );
 };
 
-const DetailItem = ({ label, value, icon }: { label: string; value: string | null | undefined; icon?: React.ReactNode }) => (
-  <div className="flex items-start">
-    <div className="text-gray-500 mr-2 mt-0.5">{icon}</div>
-    <div>
-      <div className="text-sm text-gray-500">{label}</div>
-      <div className="text-sm font-medium text-gray-800">{value || '-'}</div>
-    </div>
-  </div>
-);
-
-const DocumentItem = ({ label, url, icon }: { label: string; url: string; icon?: React.ReactNode }) => (
-  <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-    <div className="flex items-center">
-      <div className="text-gray-500 mr-2">{icon}</div>
-      <span className="text-sm font-medium text-gray-800">{label}</span>
-    </div>
-    <a 
-      href={url} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="text-green-600 hover:text-green-800 text-sm flex items-center"
-    >
-      <Download size={16} className="mr-1" /> Download
-    </a>
-  </div>
-);
-
-export default UserForm;
+export default UserManagementPage;
