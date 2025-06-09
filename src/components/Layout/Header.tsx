@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, User, LogOut } from 'lucide-react';
+import { Menu, User, LogOut, KeyRoundIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -63,6 +63,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 >
                   <LogOut size={16} />
                   <span>Logout</span>
+                </button>
+                <button
+                   onClick={() => navigate('/user/change-password')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                  <KeyRoundIcon size={16} />
+                  <span>Change Password</span>
                 </button>
               </div>
             )}

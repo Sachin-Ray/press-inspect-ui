@@ -28,6 +28,7 @@ import SubUnitManagementPage from '../Admin_SuperAdmin/SubUnitManagementPage';
 import ControlStationManagementPage from '../Admin_SuperAdmin/ControlStationManagementPage';
 import ColorMeasurementManagementPage from '../Admin_SuperAdmin/ColorMeasurementManagementPage';
 import GeneralInformationQuestionsPage from '../Admin_SuperAdmin/GeneralInformationQuestionsPage';
+import ChangePassword from '../components/Reuseable/ChangePassword';
 
 // Protected route wrapper
 interface ProtectedRouteProps {
@@ -84,6 +85,10 @@ const AppRoutes: React.FC = () => {
 
           <Route path="user">
             <Route path="new" element={<UserForm />} />
+          </Route>
+
+          <Route path="user">
+            <Route path="change-password" element={<ChangePassword />} />
           </Route>
 
           <Route path="manage">

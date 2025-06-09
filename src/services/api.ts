@@ -114,3 +114,11 @@ export const updateGeneralInfoQuestionById  = (deviceId: number, data: any) => a
 
 
 export const fetchAllGroups  = () => api.get('/groups');
+
+export const updatePassword = (userId: number, payload: {
+  oldPassword: string;
+  newPassword: string;
+  resetPassword: boolean;
+}) => {
+  return axios.put(`/users/${userId}`, payload);
+};

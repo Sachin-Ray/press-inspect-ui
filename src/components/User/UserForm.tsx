@@ -20,7 +20,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import ClearIcon from '@mui/icons-material/Clear';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
-import { SaveIcon, Eye, Download } from 'lucide-react';
+import { SaveIcon, Eye, Download, View, ViewIcon } from 'lucide-react';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import {
   getRoles,
@@ -551,12 +551,12 @@ const UserManagementPage: React.FC = () => {
               />
 
               {/* File Upload Fields */}
-              <Box>
+              <Box sx={{ mt: 2 }}>
                 <InputLabel>CV (PDF)</InputLabel>
                 <input
                   type="file"
                   accept=".pdf"
-                  onChange={(e) => handleFileChange(e, 'cv')}
+                  onChange={(e) => handleFileChange(e, 'cv')} 
                 />
                 {formData.cvUrl && (
                   <Button
@@ -568,7 +568,7 @@ const UserManagementPage: React.FC = () => {
                 )}
               </Box>
 
-              <Box>
+              <Box >
                 <InputLabel>Passport Attachment</InputLabel>
                 <input
                   type="file"
@@ -694,35 +694,35 @@ const UserManagementPage: React.FC = () => {
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Email:</Box> {selectedUser.email}</p>
+                    }}>Email:</Box> {selectedUser.email ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Mobile:</Box> {selectedUser.mobile}</p>
+                    }}>Mobile:</Box> {selectedUser.mobile ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Passport:</Box> {selectedUser.passport_number ?? 'For Now No Passport'}</p>
+                    }}>Passport:</Box> {selectedUser.passport_number ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Address: </Box>{selectedUser.address}</p>
+                    }}>Address: </Box>{selectedUser.address ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>City:</Box> {selectedUser.city}</p>
+                    }}>City:</Box> {selectedUser.city ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>State:</Box> {selectedUser.state}</p>
+                    }}>State:</Box> {selectedUser.state ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Pincode:</Box> {selectedUser.pincode}</p>
+                    }}>Pincode:</Box> {selectedUser.pincode ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Country:</Box> {selectedUser.country?.name}</p>
+                    }}>Country:</Box> {selectedUser.country?.name ?? "-"}</p>
                 </Box>
 
                 <Box>
@@ -740,27 +740,27 @@ const UserManagementPage: React.FC = () => {
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Role:</Box> {selectedUser.roles.map(r => r.name).join(', ')}</p>
+                    }}>Role:</Box> {selectedUser.roles.map(r => r.name).join(', ') ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Company:</Box> {selectedUser.company_name}</p>
+                    }}>Company:</Box> {selectedUser.company_name ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Registration ID:</Box> {selectedUser.registration_id}</p>
+                    }}>Registration ID:</Box> {selectedUser.registration_id ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Work Experience:</Box> {selectedUser.work_experience}</p>
+                    }}>Work Experience:</Box> {selectedUser.work_experience ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Passport Expiry:</Box> {selectedUser.passport_expiry_date}</p>
+                    }}>Passport Expiry:</Box> {selectedUser.passport_expiry_date ?? "-"}</p>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Status:</Box> {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
+                    }}>Status:</Box> {selectedUser.is_active ? 'Active' : 'Inactive' }</p>
 
                   <Box
                     sx={{
@@ -791,19 +791,6 @@ const UserManagementPage: React.FC = () => {
                     </Button>
                   )}
                 </Box>
-              </Box>
-
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
-                  startIcon={<EditIcon />}
-                  onClick={() => {
-                    setViewModalOpen(false);
-                    handleEdit(selectedUser);
-                  }}
-                >
-                  Edit User
-                </Button>
               </Box>
             </>
           )}
