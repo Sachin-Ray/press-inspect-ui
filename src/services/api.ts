@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 export const api = axios.create({
-  // baseURL: 'http://localhost:4000/api',
-  baseURL: 'https://press-inspect-api.onrender.com/api',
+  baseURL: 'http://localhost:4000/api',
+  // baseURL: 'https://press-inspect-api.onrender.com/api',
   
   timeout: 10000,
   headers: {
@@ -120,5 +120,5 @@ export const updatePassword = (userId: number, payload: {
   newPassword: string;
   resetPassword: boolean;
 }) => {
-  return axios.put(`/users/${userId}`, payload);
+  return api.patch(`/users/${userId}`, payload);
 };

@@ -14,13 +14,15 @@ import {
   FormControl,
   SelectChangeEvent,
   Switch,
-  Modal
+  Modal,
+  IconButton
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ClearIcon from '@mui/icons-material/Clear';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
-import { SaveIcon, Eye, Download, View, ViewIcon } from 'lucide-react';
+import { SaveIcon, Eye, Download} from 'lucide-react';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import {
   getRoles,
@@ -82,6 +84,7 @@ const UserManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [fileUploads, setFileUploads] = useState({
     cvFile: null as File | null,
     passportFile: null as File | null,
@@ -428,11 +431,23 @@ const UserManagementPage: React.FC = () => {
                 fullWidth
                 label={isEditing ? 'New Password (leave blank to keep current)' : 'Password'}
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={handleInputChange}
                 margin="normal"
                 required={!isEditing}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
               <FormControl fullWidth margin="normal" required>
                 <InputLabel>Role</InputLabel>
@@ -556,7 +571,7 @@ const UserManagementPage: React.FC = () => {
                 <input
                   type="file"
                   accept=".pdf"
-                  onChange={(e) => handleFileChange(e, 'cv')} 
+                  onChange={(e) => handleFileChange(e, 'cv')}
                 />
                 {formData.cvUrl && (
                   <Button
@@ -670,7 +685,7 @@ const UserManagementPage: React.FC = () => {
         <Box sx={modalStyle}>
           {selectedUser && (
             <>
-              <Box  sx={{ display: 'flex', justifyContent: 'space-between',fontWeight: 'bold', alignItems: 'center', mb: 2,fontSize: '1.5rem' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', alignItems: 'center', mb: 2, fontSize: '1.5rem' }}>
                 <h2>{selectedUser.first_name} {selectedUser.last_name}</h2>
                 <Button onClick={() => setViewModalOpen(false)}><CancelIcon /></Button>
               </Box>
@@ -726,17 +741,17 @@ const UserManagementPage: React.FC = () => {
                 </Box>
 
                 <Box>
-                    <Box
-                      component="h4"
-                      sx={{
-                        fontWeight: 'bold',
-                        textDecoration: 'underline',
-                        margin: 0,
-                        fontSize: '1.08rem'
-                      }}
-                    >
-                      Professional Information
-                    </Box>
+                  <Box
+                    component="h4"
+                    sx={{
+                      fontWeight: 'bold',
+                      textDecoration: 'underline',
+                      margin: 0,
+                      fontSize: '1.08rem'
+                    }}
+                  >
+                    Professional Information
+                  </Box>
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
@@ -760,7 +775,7 @@ const UserManagementPage: React.FC = () => {
                   <p><Box
                     sx={{
                       fontWeight: 'bold'
-                    }}>Status:</Box> {selectedUser.is_active ? 'Active' : 'Inactive' }</p>
+                    }}>Status:</Box> {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
 
                   <Box
                     sx={{

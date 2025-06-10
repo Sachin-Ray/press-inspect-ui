@@ -6,8 +6,11 @@ import {
   TextField,
   Typography,
   Snackbar,
-  Alert
+  Alert,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { updatePassword } from '../../services/api';
 
 const ChangePassword: React.FC = () => {
@@ -16,6 +19,11 @@ const ChangePassword: React.FC = () => {
     oldPassword: '',
     newPassword: '',
     confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState({
+    oldPassword: false,
+    newPassword: false,
+    confirmPassword: false
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [snack, setSnack] = useState({
@@ -38,6 +46,13 @@ const ChangePassword: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const toggleShowPassword = (field: string) => {
+    setShowPassword((prev) => ({
+      ...prev,
+      [field]: !prev[field as keyof typeof prev]
+    }));
   };
 
   const validate = () => {
@@ -94,6 +109,36 @@ const ChangePassword: React.FC = () => {
     }
   };
 
+  const renderPasswordField = (
+    label: string,
+    name: keyof typeof formData
+  ) => (
+    <TextField
+      label={label}
+      name={name}
+      type={showPassword[name] ? 'text' : 'password'}
+      fullWidth
+      margin="normal"
+      value={formData[name]}
+      onChange={handleChange}
+      error={!!errors[name]}
+      helperText={errors[name]}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton
+              onClick={() => toggleShowPassword(name)}
+              edge="end"
+              aria-label={`toggle ${name} visibility`}
+            >
+              {showPassword[name] ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          </InputAdornment>
+        )
+      }}
+    />
+  );
+
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 1400, mx: 'auto', mt: 5 }}>
       <Typography variant="h6" gutterBottom>
@@ -101,41 +146,9 @@ const ChangePassword: React.FC = () => {
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        <TextField
-          label="Old Password"
-          name="oldPassword"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={formData.oldPassword}
-          onChange={handleChange}
-          error={!!errors.oldPassword}
-          helperText={errors.oldPassword}
-        />
-
-        <TextField
-          label="New Password"
-          name="newPassword"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={formData.newPassword}
-          onChange={handleChange}
-          error={!!errors.newPassword}
-          helperText={errors.newPassword}
-        />
-
-        <TextField
-          label="Confirm New Password"
-          name="confirmPassword"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          error={!!errors.confirmPassword}
-          helperText={errors.confirmPassword}
-        />
+        {renderPasswordField('Old Password', 'oldPassword')}
+        {renderPasswordField('New Password', 'newPassword')}
+        {renderPasswordField('Confirm New Password', 'confirmPassword')}
 
         <Box mt={2} display="flex" justifyContent="flex-end">
           <Button variant="contained" color="primary" type="submit">
