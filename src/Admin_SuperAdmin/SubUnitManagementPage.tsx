@@ -171,7 +171,7 @@ const SubUnitManagementPage: React.FC = () => {
   ];
 
   return (
-    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 800 }}>
+    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth:1500, marginTop:2}}>
       <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
         <Tab label={isEditing ? 'Edit Sub-Unit' : 'Add New Sub-Unit'} value="add" />
         <Tab label="View Sub-Units" value="view" />

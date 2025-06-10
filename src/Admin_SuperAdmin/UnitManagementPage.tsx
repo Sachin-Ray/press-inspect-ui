@@ -111,7 +111,7 @@ const UnitManagementPage: React.FC = () => {
   ];
 
   return (
-    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 800 }}>
+    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth:1500, marginTop:2}}>
       <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
         <Tab label={isEditing ? 'Edit Unit' : 'Add New Unit'} value="add" />
         <Tab label="View Units" value="view" />

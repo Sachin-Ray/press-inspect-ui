@@ -152,7 +152,7 @@ const BuyerManagementPage: React.FC = () => {
   ];
 
   return (
-    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 1200 }}>
+    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth:1500, marginTop:2}}>
       <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
         <Tab label={isEditing ? "Edit Buyer" : "Add New Buyer"} value="add" />
         <Tab label="View Buyers" value="view" />

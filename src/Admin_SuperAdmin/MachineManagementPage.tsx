@@ -198,7 +198,7 @@ const MachineManagementPage: React.FC = () => {
   }
 
   return (
-    <Paper elevation={3} sx={{p:3, margin:'auto', maxWidth:1400}}>
+    <Paper elevation={3} sx={{p:3, margin:'auto', maxWidth:1500, marginTop:2}}>
       <Tabs value={activeTab} onChange={(_,v)=>setActiveTab(v)}>
         <Tab label={isEditing?'Edit Machine':'Add New Machine'} value="add" />
         <Tab label="View Machines" value="view" />
