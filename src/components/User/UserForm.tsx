@@ -80,7 +80,7 @@ const UserManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 5 });
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [searchTerm, setSearchTerm] = useState('');
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
@@ -667,7 +667,7 @@ const UserManagementPage: React.FC = () => {
                 loading={loading}
                 paginationModel={paginationModel}
                 onPaginationModelChange={setPaginationModel}
-                pageSizeOptions={[5, 10, 20]}
+                pageSizeOptions={[10, 50, 100]}
                 pagination
                 disableRowSelectionOnClick
                 getRowId={(row) => row.id}

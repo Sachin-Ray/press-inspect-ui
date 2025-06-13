@@ -140,7 +140,7 @@ const ChangePassword: React.FC = () => {
   );
 
   return (
-    <Paper elevation={3} sx={{ p: 4, maxWidth: 1400, mx: 'auto', mt: 5 }}>
+    <Paper elevation={3} sx={{ p: 4, maxWidth: 1500, mx: 'auto', mt: 2 }}>
       <Typography variant="h6" gutterBottom>
         Change Password
       </Typography>

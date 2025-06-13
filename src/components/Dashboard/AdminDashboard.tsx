@@ -1,7 +1,17 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ClipboardCheck, Users, FileText, Settings, HelpCircle, Download } from 'lucide-react';
-import { useReport } from '../../context/ReportContext';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  ClipboardCheck,
+  Users,
+  FileText,
+  Settings,
+  HelpCircle,
+  Download,
+  HardHat,
+  User,
+  ClipboardList,
+} from "lucide-react";
+import { useReport } from "../../context/ReportContext";
 
 const AdminDashboard: React.FC = () => {
   const { reports } = useReport();
@@ -15,9 +25,12 @@ const AdminDashboard: React.FC = () => {
   }, {} as Record<string, number>);
 
   // Get recent reports
-  const recentReports = [...reports].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  ).slice(0, 5);
+  const recentReports = [...reports]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -50,33 +63,74 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500">Press Reports</p>
-              <p className="text-2xl font-bold text-gray-900">{reportsByGroup['Press'] || 0}</p>
+              <p className="text-sm font-medium text-gray-500">
+                Total Engineers
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{totalReports}</p>
             </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <ClipboardCheck className="h-6 w-6 text-green-600" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <HardHat className="h-6 w-6 text-[#0F52BA]" />{" "}
+              {/* Engineers icon */}
             </div>
           </div>
         </div>
+
+        {/* Total Customers */}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500">Pre Press Reports</p>
-              <p className="text-2xl font-bold text-gray-900">{reportsByGroup['Pre Press'] || 0}</p>
+              <p className="text-sm font-medium text-gray-500">
+                Total Customers
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{totalReports}</p>
             </div>
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <ClipboardCheck className="h-6 w-6 text-purple-600" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <User className="h-6 w-6 text-[#0F52BA]" /> {/* Customer icon */}
             </div>
           </div>
         </div>
+
+        {/* Total Users */}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-gray-500">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">5</p>
+              <p className="text-2xl font-bold text-gray-900">{totalReports}</p>
             </div>
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <Users className="h-6 w-6 text-amber-600" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="h-6 w-6 text-[#0F52BA]" /> {/* Users icon */}
+            </div>
+          </div>
+        </div>
+
+        {/* Press Reports */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Press Reports</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {reportsByGroup["Press"] || 0}
+              </p>
+            </div>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <ClipboardCheck className="h-6 w-6 text-green-600" />{" "}
+              {/* Suitable */}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-500">
+                Pre Press Reports
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {reportsByGroup["Pre Press"] || 0}
+              </p>
+            </div>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <ClipboardList className="h-6 w-6 text-purple-600" />{" "}
+              {/* Differentiate from Press */}
             </div>
           </div>
         </div>
@@ -87,7 +141,9 @@ const AdminDashboard: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="bg-gray-50 py-4 px-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Recent Reports</h2>
+              <h2 className="text-lg font-medium text-gray-900">
+                Recent Reports
+              </h2>
             </div>
             <div className="divide-y divide-gray-200">
               {recentReports.length > 0 ? (
@@ -102,17 +158,18 @@ const AdminDashboard: React.FC = () => {
                           Customer: {report.customerName}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(report.createdAt).toLocaleDateString()} by {report.inspectorName}
+                          {new Date(report.createdAt).toLocaleDateString()} by{" "}
+                          {report.inspectorName}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span 
+                        <span
                           className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            report.overallRating === 'Good'
-                              ? 'bg-green-100 text-green-800'
-                              : report.overallRating === 'Average'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
+                            report.overallRating === "Good"
+                              ? "bg-green-100 text-green-800"
+                              : report.overallRating === "Average"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
                           }`}
                         >
                           {report.overallRating}
@@ -148,7 +205,9 @@ const AdminDashboard: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="bg-gray-50 py-4 px-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
+              <h2 className="text-lg font-medium text-gray-900">
+                Quick Actions
+              </h2>
             </div>
             <div className="p-6 space-y-4">
               <Link
