@@ -29,6 +29,7 @@ import ControlStationManagementPage from '../Admin_SuperAdmin/ControlStationMana
 import ColorMeasurementManagementPage from '../Admin_SuperAdmin/ColorMeasurementManagementPage';
 import GeneralInformationQuestionsPage from '../Admin_SuperAdmin/GeneralInformationQuestionsPage';
 import ChangePassword from '../components/Reuseable/ChangePassword';
+import ControlStationThingsToCheckManagementPage from '../Admin_SuperAdmin/ControlStationThingsToCheckManagementPage';
 
 // Protected route wrapper
 interface ProtectedRouteProps {
@@ -98,6 +99,7 @@ const AppRoutes: React.FC = () => {
             <Route path="units" element={<UnitManagementPage />} />
             <Route path="sub-units" element={<SubUnitManagementPage />} />
             <Route path="control-stations" element={<ControlStationManagementPage />} />
+            <Route path="control-station-checks" element={<ControlStationThingsToCheckManagementPage />} />
             <Route path="color-measuring-devices" element={<ColorMeasurementManagementPage />} />
             <Route path="general-questions" element={<GeneralInformationQuestionsPage />} />
           </Route>

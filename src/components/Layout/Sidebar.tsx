@@ -23,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   // Get menu items based on user role
   const getMenuItems = () => {
     const role = state.user?.roles || '';
-    
+
     const items = [
       {
         name: 'Dashboard',
@@ -35,13 +35,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         name: 'New Inspection',
         icon: <ClipboardCheck size={20} />,
         path: '/inspection/new',
-        roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector']
+        roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector', 'SuperAdmin']
       },
       {
         name: 'My Reports',
         icon: <FileText size={20} />,
         path: '/reports/inspectors',
-        roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector']
+        roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector','SuperAdmin']
       },
       {
         name: 'Manage Users',
@@ -85,6 +85,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             path: 'manage/control-stations'
           },
           {
+            name: 'Control Station Checks', 
+            path: 'manage/control-station-checks'
+          },
+          {
             name: 'Color Measuring Devices',
             path: 'manage/color-measuring-devices'
           },
@@ -110,17 +114,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     <>
       {/* Mobile sidebar backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity md:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#0F52BA] transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex md:flex-col md:h-screen ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#0F52BA] transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex md:flex-col md:h-screen ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-blue-700">
           <div className="flex items-center">
@@ -151,11 +154,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <>
                     <button
                       onClick={() => setOpenSubmenu(!openSubmenu)}
-                      className={`flex items-center justify-between w-full gap-3 px-4 py-2.5 rounded-md transition-colors ${
-                        isSubmenuActive(item.submenu)
+                      className={`flex items-center justify-between w-full gap-3 px-4 py-2.5 rounded-md transition-colors ${isSubmenuActive(item.submenu)
                           ? 'bg-white text-[#0F52BA] font-medium'
                           : 'text-white hover:bg-blue-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         {item.icon}
@@ -170,10 +172,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                             <NavLink
                               to={subItem.path}
                               className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
-                                  isActive
-                                    ? 'bg-blue-800 text-white font-medium'
-                                    : 'text-blue-200 hover:bg-blue-700 hover:text-white'
+                                `flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${isActive
+                                  ? 'bg-blue-800 text-white font-medium'
+                                  : 'text-blue-200 hover:bg-blue-700 hover:text-white'
                                 }`
                               }
                             >
@@ -188,10 +189,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${
-                        isActive
-                          ? 'bg-white text-[#0F52BA] font-medium'
-                          : 'text-white hover:bg-blue-700'
+                      `flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive
+                        ? 'bg-white text-[#0F52BA] font-medium'
+                        : 'text-white hover:bg-blue-700'
                       }`
                     }
                   >

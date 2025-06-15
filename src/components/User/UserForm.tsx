@@ -15,21 +15,26 @@ import {
   SelectChangeEvent,
   Switch,
   Modal,
-  IconButton
+  IconButton,
+  Typography
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ClearIcon from '@mui/icons-material/Clear';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
-import { SaveIcon, Eye, Download} from 'lucide-react';
+import { SaveIcon, Eye, Download } from 'lucide-react';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import {
   getRoles,
   registerUser,
   getUsers,
   getCountries,
-  updateUserStatus
+  updateUserStatus,
+  downloadCv,
+  downloadPhoto,
+  downloadPassport,
+  updateUserById
 } from '../../services/api';
 
 interface Role {
@@ -53,22 +58,28 @@ interface UserType {
   city: string;
   state: string;
   pincode: string;
-  countryId: number;
+  country_id: number;
   country: {
     id: number;
     name: string;
   };
   company_name: string | null;
   registration_id: string | null;
-  cv_url: string | null;
+  cv: string | null;
   work_experience: string | null;
   is_active: boolean;
   roles: Role[];
   mobile: string;
   passport_expiry_date: string;
-  passport_attachment: string | null;
+  passportAttachment: string | null;
   joining_date: string;
-  photo_of_engineer: string | null;
+  photoOfEngineer: string | null;
+}
+
+interface FileUploads {
+  cv: File | null;
+  passportAttachment: File | null;
+  photoOfEngineer: File | null;
 }
 
 const UserManagementPage: React.FC = () => {
@@ -85,34 +96,30 @@ const UserManagementPage: React.FC = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [fileUploads, setFileUploads] = useState({
-    cvFile: null as File | null,
-    passportFile: null as File | null,
-    photoFile: null as File | null
+  const [fileUploads, setFileUploads] = useState<FileUploads>({
+    cv: null,
+    passportAttachment: null,
+    photoOfEngineer: null
   });
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    passportNumber: '',
+    first_name: '',
+    last_name: '',
+    passport_number: '',
     email: '',
     password: '',
-    roleId: '',
+    role_id: '',
     address: '',
     city: '',
     state: '',
     pincode: '',
-    countryId: '',
+    country_id: '',
     mobile: '',
-    companyName: '',
-    registrationId: '',
-    cvUrl: '',
-    workExperience: '',
-    passportExpiryDate: '',
-    passportAttachment: '',
-    photoOfEngineer: '',
-    joiningDate: '',
-    isActive: true
+    company_name: '',
+    registration_id: '',
+    work_experience: '',
+    passport_expiry_date: '',
+    joining_date: ''
   });
 
   useEffect(() => {
@@ -164,137 +171,243 @@ const UserManagementPage: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cv' | 'passport' | 'photo') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const fileUrl = URL.createObjectURL(file);
+      console.log(`File selected (${type}):`, file.name, file.size, file.type);
 
-      setFileUploads(prev => ({
-        ...prev,
-        [`${type}File`]: file
-      }));
+      try {
+        validateFile(file, type);
 
-      setFormData(prev => ({
-        ...prev,
-        [`${type}Url`]: fileUrl,
-        ...(type === 'passport' ? { passportAttachment: fileUrl } : {}),
-        ...(type === 'photo' ? { photoOfEngineer: fileUrl } : {})
-      }));
+        setFileUploads(prev => ({
+          ...prev,
+          [type === 'cv' ? 'cv' :
+            type === 'passport' ? 'passportAttachment' :
+              'photoOfEngineer']: file
+        }));
+      } catch (error) {
+        alert(error);
+        console.error(`File validation error (${type}):`, error);
+        e.target.value = ''; // Reset file input
+      }
+    }
+  };
+
+  const validateFile = (file: File, type: 'cv' | 'passport' | 'photo') => {
+    const validTypes = {
+      cv: ['application/pdf'],
+      passport: ['application/pdf', 'image/jpeg', 'image/png'],
+      photo: ['image/jpeg', 'image/png']
+    };
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!validTypes[type].includes(file.type)) {
+      throw new Error(`Invalid file type for ${type}. Allowed: ${validTypes[type].join(', ')}`);
+    }
+
+    if (file.size > maxSize) {
+      throw new Error('File size exceeds 5MB limit');
     }
   };
 
   const handleClear = () => {
     setFormData({
-      firstName: '',
-      lastName: '',
-      passportNumber: '',
+      first_name: '',
+      last_name: '',
+      passport_number: '',
       email: '',
       password: '',
-      roleId: '',
+      role_id: '',
       address: '',
       city: '',
       state: '',
       pincode: '',
-      countryId: '',
+      country_id: '',
       mobile: '',
-      companyName: '',
-      registrationId: '',
-      cvUrl: '',
-      workExperience: '',
-      passportExpiryDate: '',
-      passportAttachment: '',
-      photoOfEngineer: '',
-      joiningDate: '',
-      isActive: true
+      company_name: '',
+      registration_id: '',
+      work_experience: '',
+      passport_expiry_date: '',
+      joining_date: ''
     });
     setFileUploads({
-      cvFile: null,
-      passportFile: null,
-      photoFile: null
+      cv: null,
+      passportAttachment: null,
+      photoOfEngineer: null
     });
     setIsEditing(false);
     setCurrentUserId(null);
+    setSelectedUser(null);
+
+    // Clear file inputs
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+      (input as HTMLInputElement).value = '';
+    });
   };
 
   const validatePassword = (password: string) => {
-    if (isEditing && !password) return true;
+    if (!isEditing && !password) return true;
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return passwordRegex.test(password);
+  };
+
+  const validateForm = () => {
+    const requiredFields = [
+      'first_name', 'last_name', 'passport_number', 'email',
+      'role_id', 'city', 'pincode', 'country_id', 'mobile'
+    ];
+
+    if (!isEditing) {
+      requiredFields.push('password');
+    }
+
+    for (const field of requiredFields) {
+      if (!formData[field as keyof typeof formData]) {
+        alert(`Please fill in the ${field.replace(/_/g, ' ')} field`);
+        return false;
+      }
+    }
+
+    if (formData.password && !validatePassword(formData.password)) {
+      alert('Password must contain at least:\n- One uppercase letter\n- One lowercase letter\n- One number\n- One special character\n- Minimum 8 characters');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!validatePassword(formData.password)) {
-      alert('Password must contain at least one uppercase, one lowercase, one number, and one special character (8 chars min)');
+    if (!validateForm()) {
       setLoading(false);
       return;
     }
 
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        roleId: parseInt(formData.roleId, 10),
-        passportNumber: formData.passportNumber,
-        email: formData.email,
-        mobile: formData.mobile,
-        password: formData.password,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        countryId: parseInt(formData.countryId, 10),
-        companyName: formData.companyName,
-        registrationId: formData.registrationId,
-        cvUrl: formData.cvUrl,
-        workExperience: formData.workExperience,
-        passportExpiryDate: formData.passportExpiryDate,
-        passportAttachment: formData.passportAttachment,
-        photoOfEngineer: formData.photoOfEngineer,
-        joiningDate: formData.joiningDate ? new Date(formData.joiningDate).toISOString() : null,
-        is_active: formData.isActive
-      };
+      const formPayload = new FormData();
 
-      if (isEditing && currentUserId) {
-        // await updateUser(currentUserId, payload);
-      } else {
-        await registerUser(payload);
+      // Append all non-file fields
+      const formFields = [
+        'first_name', 'last_name', 'passport_number', 'email', 'password',
+        'role_id', 'address', 'city', 'state', 'pincode', 'country_id',
+        'mobile', 'company_name', 'registration_id', 'work_experience',
+        'passport_expiry_date', 'joining_date'
+      ];
+
+      formFields.forEach(field => {
+        if (formData[field as keyof typeof formData]) {
+          formPayload.append(field, formData[field as keyof typeof formData]);
+        }
+      });
+
+      // Append files with correct field names
+      if (fileUploads.cv) {
+        formPayload.append('cv', fileUploads.cv);
       }
+      if (fileUploads.passportAttachment) {
+        formPayload.append('passportAttachment', fileUploads.passportAttachment);
+      }
+      if (fileUploads.photoOfEngineer) {
+        formPayload.append('photoOfEngineer', fileUploads.photoOfEngineer);
+      }
+
+      let response;
+      if (isEditing && currentUserId) {
+        response = await updateUserById(currentUserId, formPayload);
+      } else {
+        response = await registerUser(formPayload);
+      }
+
+      console.log('API Response:', response.data);
+      alert(`User ${isEditing ? 'updated' : 'created'} successfully!`);
 
       handleClear();
       fetchUsers();
       setActiveTab('view');
-    } catch (error) {
-      console.error('Error saving user:', error);
-      alert('Failed to save user. Please try again.');
+    } catch (error: any) {
+      console.error('Error details:', error.response?.data || error.message);
+      alert(error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'save'} user. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDocumentResponse = (response: any, docType: string, validContentTypes: string | string[]) => {
+    console.log(`Handling ${docType} response...`);
+
+    // Normalize content types to array
+    const validTypes = Array.isArray(validContentTypes) ? validContentTypes : [validContentTypes];
+
+    // Check for direct URL in response
+    const url = response.data?.url || response.data;
+    if (typeof url === 'string' && url.startsWith('http')) {
+      console.log(`${docType} URL found:`, url);
+      window.open(url, '_blank');
+      return;
+    }
+
+    // Check content type
+    const contentType = response.headers['content-type'];
+    if (!contentType) {
+      console.error('No content-type header found');
+      throw new Error('Server did not provide content type');
+    }
+
+    // Validate content type
+    const isValidType = validTypes.some(type => contentType.includes(type));
+    if (!isValidType) {
+      console.error(`Invalid content type: ${contentType}. Expected: ${validTypes.join(', ')}`);
+      throw new Error(`Invalid file type: ${contentType.split(';')[0]}`);
+    }
+
+    // Handle binary data
+    console.log(`Creating blob for ${docType} with type ${contentType}`);
+    const blob = new Blob([response.data], { type: contentType });
+    const fileUrl = URL.createObjectURL(blob);
+    console.log(`Opening ${docType} from blob URL`);
+    window.open(fileUrl, '_blank');
+
+    // Clean up after some time
+    setTimeout(() => {
+      URL.revokeObjectURL(fileUrl);
+      console.log(`Cleaned up ${docType} blob URL`);
+    }, 10000);
+  };
+
   const handleEdit = (user: UserType) => {
     setFormData({
-      firstName: user.first_name,
-      lastName: user.last_name,
-      passportNumber: user.passport_number,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      passport_number: user.passport_number,
       email: user.email,
       password: '',
-      roleId: user.roles[0]?.id.toString() || '',
-      address: user.address,
+      role_id: user.roles[0]?.id.toString() || '',
+      address: user.address || '',
       city: user.city,
-      state: user.state,
+      state: user.state || '',
       pincode: user.pincode,
-      countryId: user.countryId.toString(),
+      country_id: user.country_id.toString() || '',
       mobile: user.mobile,
-      companyName: user.company_name || '',
-      registrationId: user.registration_id || '',
-      cvUrl: user.cv_url || '',
-      workExperience: user.work_experience || '',
-      passportExpiryDate: user.passport_expiry_date || '',
-      passportAttachment: user.passport_attachment || '',
-      photoOfEngineer: user.photo_of_engineer || '',
-      joiningDate: user.joining_date ? user.joining_date.split('T')[0] : '',
-      isActive: user.is_active
+      company_name: user.company_name || '',
+      registration_id: user.registration_id || '',
+      work_experience: user.work_experience || '',
+      passport_expiry_date: user.passport_expiry_date ? user.passport_expiry_date.split('T')[0] : '',
+      joining_date: user.joining_date ? user.joining_date.split('T')[0] : ''
     });
+
+    console.log('CV File:', user.cv);
+    console.log('Passport Attachment File:', user.passportAttachment);
+    console.log('Photo of Engineer File:', user.photoOfEngineer);
+
+    setFileUploads({
+      cv: user.cv ? new File([], user.cv) : null,
+      passportAttachment: user.passportAttachment ? new File([], user.passportAttachment) : null,
+      photoOfEngineer: user.photoOfEngineer ? new File([], user.photoOfEngineer) : null
+    });
+    console.log('File uploads set:', fileUploads); 
+
+    setSelectedUser(user);
     setIsEditing(true);
     setCurrentUserId(user.id);
     setActiveTab('add');
@@ -376,11 +489,13 @@ const UserManagementPage: React.FC = () => {
     bgcolor: 'background.paper',
     boxShadow: 24,
     p: 4,
-    borderRadius: 2
+    borderRadius: 2,
+    maxHeight: '90vh',
+    overflowY: 'auto'
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth:1500, marginTop:2}}>
+    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 1500, marginTop: 2 }}>
       <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
         <Tab label={isEditing ? 'Edit User' : 'Add New User'} value="add" />
         <Tab label="View Users" value="view" />
@@ -393,8 +508,8 @@ const UserManagementPage: React.FC = () => {
               <TextField
                 fullWidth
                 label="First Name"
-                name="firstName"
-                value={formData.firstName}
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleInputChange}
                 margin="normal"
                 required
@@ -402,8 +517,8 @@ const UserManagementPage: React.FC = () => {
               <TextField
                 fullWidth
                 label="Last Name"
-                name="lastName"
-                value={formData.lastName}
+                name="last_name"
+                value={formData.last_name}
                 onChange={handleInputChange}
                 margin="normal"
                 required
@@ -411,8 +526,8 @@ const UserManagementPage: React.FC = () => {
               <TextField
                 fullWidth
                 label="Passport Number"
-                name="passportNumber"
-                value={formData.passportNumber}
+                name="passport_number"
+                value={formData.passport_number}
                 onChange={handleInputChange}
                 margin="normal"
                 required
@@ -427,33 +542,36 @@ const UserManagementPage: React.FC = () => {
                 margin="normal"
                 required
               />
-              <TextField
-                fullWidth
-                label={isEditing ? 'New Password (leave blank to keep current)' : 'Password'}
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleInputChange}
-                margin="normal"
-                required={!isEditing}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
+              {!isEditing && (
+                <TextField
+                  fullWidth
+                  label='Password'
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  margin="normal"
+                  required={!isEditing}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              )}
+
               <FormControl fullWidth margin="normal" required>
                 <InputLabel>Role</InputLabel>
                 <Select
-                  name="roleId"
-                  value={formData.roleId}
+                  name="role_id"
+                  value={formData.role_id}
                   onChange={handleSelectChange}
                   label="Role"
                 >
@@ -462,6 +580,7 @@ const UserManagementPage: React.FC = () => {
                   ))}
                 </Select>
               </FormControl>
+
               <TextField
                 fullWidth
                 label="Address"
@@ -499,8 +618,8 @@ const UserManagementPage: React.FC = () => {
               <FormControl fullWidth margin="normal" required>
                 <InputLabel>Country</InputLabel>
                 <Select
-                  name="countryId"
-                  value={formData.countryId}
+                  name="country_id"
+                  value={formData.country_id}
                   onChange={handleSelectChange}
                   label="Country"
                 >
@@ -518,48 +637,48 @@ const UserManagementPage: React.FC = () => {
                 value={formData.mobile}
                 onChange={handleInputChange}
                 margin="normal"
+                required
               />
               <TextField
                 fullWidth
                 label="Company Name"
-                name="companyName"
-                value={formData.companyName}
+                name="company_name"
+                value={formData.company_name}
                 onChange={handleInputChange}
                 margin="normal"
               />
               <TextField
                 fullWidth
                 label="Registration ID"
-                name="registrationId"
-                value={formData.registrationId}
+                name="registration_id"
+                value={formData.registration_id}
                 onChange={handleInputChange}
                 margin="normal"
               />
               <TextField
                 fullWidth
                 label="Work Experience"
-                name="workExperience"
-                value={formData.workExperience}
+                name="work_experience"
+                value={formData.work_experience}
                 onChange={handleInputChange}
                 margin="normal"
               />
               <TextField
                 fullWidth
                 label="Passport Expiry Date"
-                name="passportExpiryDate"
+                name="passport_expiry_date"
                 type="date"
-                value={formData.passportExpiryDate}
+                value={formData.passport_expiry_date}
                 onChange={handleInputChange}
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
               />
-
               <TextField
                 fullWidth
                 label="Joining Date"
-                name="joiningDate"
+                name="joining_date"
                 type="date"
-                value={formData.joiningDate}
+                value={formData.joining_date}
                 onChange={handleInputChange}
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
@@ -567,53 +686,101 @@ const UserManagementPage: React.FC = () => {
 
               {/* File Upload Fields */}
               <Box sx={{ mt: 2 }}>
-                <InputLabel>CV (PDF)</InputLabel>
+                <InputLabel>CV (PDF only)</InputLabel>
                 <input
                   type="file"
                   accept=".pdf"
                   onChange={(e) => handleFileChange(e, 'cv')}
+                  id="cv-upload"
+                  key={fileUploads.cv?.name || selectedUser?.cv}
                 />
-                {formData.cvUrl && (
-                  <Button
-                    startIcon={<Download />}
-                    onClick={() => window.open(formData.cvUrl, '_blank')}
-                  >
-                    View Current CV
-                  </Button>
+                {fileUploads.cv ? (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2">
+                      Selected: {fileUploads.cv.name}
+                    </Typography>
+                    <Button
+                      onClick={() => {
+                        setFileUploads(prev => ({ ...prev, cv: null }));
+                        const input = document.getElementById('cv-upload') as HTMLInputElement;
+                        if (input) input.value = '';
+                      }}
+                      size="small"
+                      sx={{ ml: 1 }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                ) : selectedUser?.cv && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Current file: <a href={selectedUser.cv} target="_blank" rel="noopener noreferrer">View CV</a>
+                  </Typography>
                 )}
               </Box>
 
-              <Box >
-                <InputLabel>Passport Attachment</InputLabel>
+              <Box sx={{ mt: 2 }}>
+                <InputLabel>Passport Attachment (PDF/JPEG/PNG)</InputLabel>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".pdf,.jpeg,.jpg,.png"
                   onChange={(e) => handleFileChange(e, 'passport')}
+                  id="passport-upload"
+                  key={fileUploads.passportAttachment?.name || selectedUser?.passportAttachment}
                 />
-                {formData.passportAttachment && (
-                  <Button
-                    startIcon={<Download />}
-                    onClick={() => window.open(formData.passportAttachment, '_blank')}
-                  >
-                    View Current Passport
-                  </Button>
+                {fileUploads.passportAttachment ? (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2">
+                      Selected: {fileUploads.passportAttachment.name}
+                    </Typography>
+                    <Button
+                      onClick={() => {
+                        setFileUploads(prev => ({ ...prev, passportAttachment: null }));
+                        const input = document.getElementById('passport-upload') as HTMLInputElement;
+                        if (input) input.value = '';
+                      }}
+                      size="small"
+                      sx={{ ml: 1 }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                ) : selectedUser?.passportAttachment && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Current file: <a href={selectedUser.passportAttachment} target="_blank" rel="noopener noreferrer">View Passport</a>
+                  </Typography>
                 )}
               </Box>
 
-              <Box>
-                <InputLabel>Engineer Photo</InputLabel>
+              <Box sx={{ mt: 2 }}>
+                <InputLabel>Engineer Photo (JPEG/PNG)</InputLabel>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".jpeg,.jpg,.png"
                   onChange={(e) => handleFileChange(e, 'photo')}
+                  id="photo-upload"
+                  key={fileUploads.photoOfEngineer?.name || selectedUser?.photoOfEngineer}
                 />
-                {formData.photoOfEngineer && (
-                  <Button
-                    startIcon={<Download />}
-                    onClick={() => window.open(formData.photoOfEngineer, '_blank')}
-                  >
-                    View Current Photo
-                  </Button>
+                {fileUploads.photoOfEngineer ? (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2">
+                      Selected: {fileUploads.photoOfEngineer.name}
+                    </Typography>
+                    <Button
+                      onClick={() => {
+                        setFileUploads(prev => ({ ...prev, photoOfEngineer: null }));
+                        const input = document.getElementById('photo-upload') as HTMLInputElement;
+                        if (input) input.value = '';
+                      }}
+                      size="small"
+                      sx={{ ml: 1 }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                ) : selectedUser?.photoOfEngineer && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Current file: <a href={selectedUser.photoOfEngineer} target="_blank" rel="noopener noreferrer">View Photo</a>
+                  </Typography>
                 )}
               </Box>
             </Box>
@@ -625,7 +792,7 @@ const UserManagementPage: React.FC = () => {
                     Cancel
                   </Button>
                   <Button variant="contained" color="primary" startIcon={<SaveIcon />} type="submit" disabled={loading}>
-                    Update User
+                    {loading ? 'Updating...' : 'Update User'}
                   </Button>
                 </>
               ) : (
@@ -634,7 +801,7 @@ const UserManagementPage: React.FC = () => {
                     Clear
                   </Button>
                   <Button variant="contained" color="primary" type="submit" disabled={loading}>
-                    Add User
+                    {loading ? 'Creating...' : 'Add User'}
                   </Button>
                 </>
               )}
@@ -685,126 +852,114 @@ const UserManagementPage: React.FC = () => {
         <Box sx={modalStyle}>
           {selectedUser && (
             <>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', alignItems: 'center', mb: 2, fontSize: '1.5rem' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <h2>{selectedUser.first_name} {selectedUser.last_name}</h2>
-                <Button onClick={() => setViewModalOpen(false)}><CancelIcon /></Button>
+                <IconButton onClick={() => setViewModalOpen(false)}>
+                  <CancelIcon />
+                </IconButton>
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
                 <Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
-                    <Box
-                      component="h4"
-                      sx={{
-                        fontWeight: 'bold',
-                        textDecoration: 'underline',
-                        margin: 0,
-                        fontSize: '1.08rem'
-                      }}
-                    >
-                      Personal Information
-                    </Box>
+                  <Box sx={{ fontWeight: 'bold', textDecoration: 'underline', mb: 1 }}>
+                    Personal Information
                   </Box>
-
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Email:</Box> {selectedUser.email ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Mobile:</Box> {selectedUser.mobile ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Passport:</Box> {selectedUser.passport_number ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Address: </Box>{selectedUser.address ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>City:</Box> {selectedUser.city ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>State:</Box> {selectedUser.state ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Pincode:</Box> {selectedUser.pincode ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Country:</Box> {selectedUser.country?.name ?? "-"}</p>
+                  <p><strong>Email:</strong> {selectedUser.email || "-"}</p>
+                  <p><strong>Mobile:</strong> {selectedUser.mobile || "-"}</p>
+                  <p><strong>Passport:</strong> {selectedUser.passport_number || "-"}</p>
+                  <p><strong>Address:</strong> {selectedUser.address || "-"}</p>
+                  <p><strong>City:</strong> {selectedUser.city || "-"}</p>
+                  <p><strong>State:</strong> {selectedUser.state || "-"}</p>
+                  <p><strong>Pincode:</strong> {selectedUser.pincode || "-"}</p>
+                  <p><strong>Country:</strong> {selectedUser.country?.name || "-"}</p>
                 </Box>
 
                 <Box>
-                  <Box
-                    component="h4"
-                    sx={{
-                      fontWeight: 'bold',
-                      textDecoration: 'underline',
-                      margin: 0,
-                      fontSize: '1.08rem'
-                    }}
-                  >
+                  <Box sx={{ fontWeight: 'bold', textDecoration: 'underline', mb: 1 }}>
                     Professional Information
                   </Box>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Role:</Box> {selectedUser.roles.map(r => r.name).join(', ') ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Company:</Box> {selectedUser.company_name ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Registration ID:</Box> {selectedUser.registration_id ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Work Experience:</Box> {selectedUser.work_experience ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Passport Expiry:</Box> {selectedUser.passport_expiry_date ?? "-"}</p>
-                  <p><Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Status:</Box> {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
+                  <p><strong>Role:</strong> {selectedUser.roles.map(r => r.name).join(', ') || "-"}</p>
+                  <p><strong>Company:</strong> {selectedUser.company_name || "-"}</p>
+                  <p><strong>Registration ID:</strong> {selectedUser.registration_id || "-"}</p>
+                  <p><strong>Work Experience:</strong> {selectedUser.work_experience || "-"}</p>
+                  <p><strong>Passport Expiry:</strong> {selectedUser.passport_expiry_date || "-"}</p>
+                  <p><strong>Status:</strong> {selectedUser.is_active ? 'Active' : 'Inactive'}</p>
 
-                  <Box
-                    sx={{
-                      fontWeight: 'bold'
-                    }}>Documents:</Box>
-                  {selectedUser.cv_url && (
-                    <Button
-                      startIcon={<Download />}
-                      onClick={() => window.open(selectedUser.cv_url || '', '_blank')}
-                    >
-                      Download CV
-                    </Button>
-                  )}
-                  {selectedUser.passport_attachment && (
-                    <Button
-                      startIcon={<Download />}
-                      onClick={() => window.open(selectedUser.passport_attachment || '', '_blank')}
-                    >
-                      Download Passport
-                    </Button>
-                  )}
-                  {selectedUser.photo_of_engineer && (
-                    <Button
-                      startIcon={<Download />}
-                      onClick={() => window.open(selectedUser.photo_of_engineer || '', '_blank')}
-                    >
-                      Download Photo
-                    </Button>
-                  )}
+                  <Box sx={{ mt: 1 }}>
+                    <strong>Documents:</strong>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Visibility />}
+                        onClick={async () => {
+                          try {
+                            if (selectedUser.cv) {
+                              window.open(selectedUser.cv, '_blank');
+                              return;
+                            }
+                            const response = await downloadCv(selectedUser.id);
+                            handleDocumentResponse(response, 'CV', 'application/pdf');
+                          } catch (error) {
+                            console.error('CV download error:', error);
+                            alert('Failed to view CV. Please try again.');
+                          }
+                        }}
+                        size="small"
+                      >
+                        View CV
+                      </Button>
+
+                      <Button
+                        variant="outlined"
+                        startIcon={<Visibility />}
+                        onClick={async () => {
+                          try {
+                            if (selectedUser.passportAttachment) {
+                              window.open(selectedUser.passportAttachment, '_blank');
+                              return;
+                            }
+                            const response = await downloadPassport(selectedUser.id);
+                            handleDocumentResponse(
+                              response,
+                              'Passport',
+                              ['image/jpeg', 'image/png', 'application/pdf']
+                            );
+                          } catch (error) {
+                            console.error('Passport view error:', error);
+                            alert(`Failed to view passport: ${error || 'Unknown error'}`);
+                          }
+                        }}
+                        size="small"
+                      >
+                        View Passport
+                      </Button>
+
+                      <Button
+                        variant="outlined"
+                        startIcon={<Visibility />}
+                        onClick={async () => {
+                          try {
+                            if (selectedUser.photoOfEngineer) {
+                              window.open(selectedUser.photoOfEngineer, '_blank');
+                              return;
+                            }
+                            const response = await downloadPhoto(selectedUser.id);
+                            handleDocumentResponse(
+                              response,
+                              'Photo',
+                              ['image/jpeg', 'image/png']
+                            );
+                          } catch (error) {
+                            console.error('Photo view error:', error);
+                            alert(`Failed to view photo: ${error || 'Unknown error'}`);
+                          }
+                        }}
+                        size="small"
+                      >
+                        View Photo
+                      </Button>
+                    </Box>
+                  </Box>
                 </Box>
               </Box>
             </>

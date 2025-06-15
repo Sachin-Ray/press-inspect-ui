@@ -39,10 +39,31 @@ export const getRoles = () => api.get('/roles');
 
 export const getCountries = () => api.get('/country/findAll');
 
-export const updateUserStatus = (userId: number, newStatus: boolean) => api.patch(`/users/update/user/status/${userId}`, { is_active: newStatus });
+export const updateUserStatus = (userId: number, newStatus: boolean) => api.patch(`/users/update-user-status-by-id/${userId}`, { is_active: newStatus });
+
+
+export const downloadCv = (userId: number) => api.get(`/users/download/cv/${userId}`, { responseType: 'blob' });
+
+export const downloadPassport = (userId: number) => api.get(`/users/download/passport/${userId}`, { responseType: 'blob' });
+
+export const downloadPhoto = (userId: number) => api.get(`/users/download/photo/${userId}`, { responseType: 'blob' });
 
 // Register a new user
-export const registerUser = (data: any) => api.post('/users/create', data);
+export const registerUser = (formData: FormData) => {
+  return api.post('/users/create', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
+};
+
+export const updateUserById = (userId: number, formData: FormData) => {
+  return api.patch(`/users/update-user-by-id/${userId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
+};
 
 // Get all users
 export const getUsers = () => api.get('/users');
@@ -97,6 +118,14 @@ export const createControlStation  = (data: any) => api.post('/reports/create/co
 
 export const updateControlStationById  = (currentStationId: number, data: any) =>
   api.patch(`/reports/update/controlStation/${currentStationId}`, data);
+
+// Control Station Thing To Be Checked APIs
+export const fetchAllControlStationThingsToCheck  = () => api.get('/reports/getAll/controlStationThingsToCheck');
+
+export const createControlStationThingsToCheck  = (data: any) => api.post('/reports/create/controlStationThingsToCheck', data);
+
+export const updateControlStationThingsToCheckById  = (currentStationThingToBeCheckedId: number, data: any) =>
+  api.patch(`/reports/update/controlStationThingsToCheck/${currentStationThingToBeCheckedId}`, data);
 
 // Color Measuring APIs
 export const fetchAllColorMeasuringDevices = () => api.get('/reports/getAll/colorMeasurments');
