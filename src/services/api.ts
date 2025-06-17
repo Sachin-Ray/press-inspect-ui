@@ -151,3 +151,22 @@ export const updatePassword = (userId: number, payload: {
 }) => {
   return api.patch(`/users/${userId}`, payload);
 };
+
+// Tech Specification APIs
+export const createTechSpecification = (formData: FormData) => {
+  return api.post('/models/create-tech-specification', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
+};
+
+export const updateTechSpecificationById = (specId: number, formData: FormData) => {
+  return api.patch(`/models/updateTechSpecfication/${specId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
+};
+
+export const fetchAllTechSpecifications = () => api.get('/models/getAllTechSpecficationPdf');

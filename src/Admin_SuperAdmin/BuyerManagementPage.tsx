@@ -19,7 +19,7 @@ import { createBuyer, fetchAllBuyers, updateBuyerById } from '../services/api';
 
 interface Buyer {
   id: number;
-  companyName: string;
+  company_name: string;
   address: string;
 }
 
@@ -28,7 +28,7 @@ const BuyerManagementPage: React.FC = () => {
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [filteredBuyers, setFilteredBuyers] = useState<Buyer[]>([]);
   const [formData, setFormData] = useState<Omit<Buyer, 'id'>>({
-    companyName: '',
+    company_name: '',
     address: ''
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -71,7 +71,7 @@ const BuyerManagementPage: React.FC = () => {
 
   useEffect(() => {
     const filtered = buyers.filter(buyer =>
-      buyer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      buyer.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       buyer.address.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredBuyers(filtered);
@@ -87,7 +87,7 @@ const BuyerManagementPage: React.FC = () => {
 
   const handleClear = () => {
     setFormData({
-      companyName: '',
+      company_name: '',
       address: ''
     });
     setIsEditing(false);
@@ -115,7 +115,7 @@ const BuyerManagementPage: React.FC = () => {
 
   const handleEdit = (buyer: Buyer) => {
     setFormData({
-      companyName: buyer.companyName,
+      company_name: buyer.company_name,
       address: buyer.address
     });
     setIsEditing(true);
@@ -125,7 +125,7 @@ const BuyerManagementPage: React.FC = () => {
 
   const columns: GridColDef[] = [
     { 
-      field: 'companyName', 
+      field: 'company_name', 
       headerName: 'Company Name', 
       flex: 1,
       minWidth: 200
@@ -164,8 +164,8 @@ const BuyerManagementPage: React.FC = () => {
             <TextField
               fullWidth
               label="Company Name"
-              name="companyName"
-              value={formData.companyName}
+              name="company_name"
+              value={formData.company_name}
               onChange={handleInputChange}
               margin="normal"
               required

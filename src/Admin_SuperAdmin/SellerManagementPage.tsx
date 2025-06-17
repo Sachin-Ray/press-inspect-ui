@@ -19,7 +19,7 @@ import { createSeller, fetchAllSellers, updateSellerById } from '../services/api
 
 interface Seller {
   id: number;
-  companyName: string;
+  company_name: string;
   address: string;
 }
 
@@ -28,7 +28,7 @@ const SellerManagementPage: React.FC = () => {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [filteredSellers, setFilteredSellers] = useState<Seller[]>([]);
   const [formData, setFormData] = useState<Omit<Seller, 'id'>>({
-    companyName: '',
+    company_name: '',
     address: ''
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -68,7 +68,7 @@ const SellerManagementPage: React.FC = () => {
 
   useEffect(() => {
     const filtered = sellers.filter(seller =>
-      seller.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      seller.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       seller.address.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredSellers(filtered);
@@ -84,7 +84,7 @@ const SellerManagementPage: React.FC = () => {
 
   const handleClear = () => {
     setFormData({
-      companyName: '',
+      company_name: '',
       address: ''
     });
     setIsEditing(false);
@@ -112,7 +112,7 @@ const SellerManagementPage: React.FC = () => {
 
   const handleEdit = (seller: Seller) => {
     setFormData({
-      companyName: seller.companyName,
+      company_name: seller.company_name,
       address: seller.address
     });
     setIsEditing(true);
@@ -122,7 +122,7 @@ const SellerManagementPage: React.FC = () => {
 
   const columns: GridColDef[] = [
     { 
-      field: 'companyName', 
+      field: 'company_name', 
       headerName: 'Company Name', 
       flex: 1,
       minWidth: 200
@@ -162,8 +162,8 @@ const SellerManagementPage: React.FC = () => {
             <TextField
               fullWidth
               label="Company Name"
-              name="companyName"
-              value={formData.companyName}
+              name="company_name"
+              value={formData.company_name}
               onChange={handleInputChange}
               margin="normal"
               required

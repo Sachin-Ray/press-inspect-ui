@@ -22,21 +22,21 @@ import {
 interface Model {
   id: number;
   name: string;
-  serialNumber: string;
-  totalImpressions: string;
+  serial_number: string;
+  total_impressions: string;
   manufacturer: string;
   year: number;
-  groupId: number;
-  buyerId: number;
-  sellerId: number;
+  group_id: number;
+  buyer_id: number;
+  seller_id: number;
   groupName?: string;
   buyerName?: string;
   sellerName?: string;
 }
 
 interface Group { id: number; name: string; }
-interface Buyer { id: number; companyName: string; }
-interface Seller { id: number; companyName: string; }
+interface Buyer { id: number; company_name: string; }
+interface Seller { id: number; company_name: string; }
 
 const MachineManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'add'|'view'>('add');
@@ -46,9 +46,9 @@ const MachineManagementPage: React.FC = () => {
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [formData, setFormData] = useState<Omit<Model,'id'>>({
-    name: '', serialNumber: '', totalImpressions: '',
+    name: '', serial_number: '', total_impressions: '',
     manufacturer: '', year: new Date().getFullYear(),
-    groupId: 0, buyerId: 0, sellerId: 0
+    group_id: 0, buyer_id: 0, seller_id: 0
   });
   const [isEditing, setIsEditing] = useState(false);
   const [currentModelId, setCurrentModelId] = useState<number|null>(null);
@@ -89,16 +89,16 @@ const MachineManagementPage: React.FC = () => {
         const mapped = raw.map(item => ({
           id: item.id,
           name: item.name,
-          serialNumber: item.serialNumber,
-          totalImpressions: item.totalImpressions,
+          serial_number: item.serial_number,
+          total_impressions: item.total_impressions,
           manufacturer: item.manufacturer,
           year: item.year,
-          groupId: item.groupId,
-          buyerId: item.buyerId,
-          sellerId: item.sellerId,
-          groupName: groups.find(g => g.id === item.groupId)?.name || '',
-          buyerName: buyers.find(b => b.id === item.buyerId)?.companyName || '',
-          sellerName: sellers.find(s => s.id === item.sellerId)?.companyName || ''
+          group_id: item.group_id,
+          buyer_id: item.buyer_id,
+          seller_id: item.seller_id,
+          groupName: groups.find(g => g.id === item.group_id)?.name || '',
+          buyerName: buyers.find(b => b.id === item.buyer_id)?.company_name || '',
+          sellerName: sellers.find(s => s.id === item.seller_id)?.company_name || ''
         })) as Model[];
         setModels(mapped);
         setFilteredModels(mapped);
@@ -115,7 +115,7 @@ const MachineManagementPage: React.FC = () => {
   useEffect(() => {
     setFilteredModels(models.filter(m =>
       m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())
     ));
   }, [searchTerm, models]);
@@ -128,7 +128,7 @@ const MachineManagementPage: React.FC = () => {
     setFormData(f => ({ ...f, [e.target.name]: Number(e.target.value) }));
   };
   const handleClear = () => {
-    setFormData({ name:'', serialNumber:'', totalImpressions:'', manufacturer:'', year:new Date().getFullYear(), groupId:0, buyerId:0, sellerId:0 });
+    setFormData({ name:'', serial_number:'', total_impressions:'', manufacturer:'', year:new Date().getFullYear(), group_id:0, buyer_id:0, seller_id:0 });
     setIsEditing(false);
     setCurrentModelId(null);
   };
@@ -150,13 +150,13 @@ const MachineManagementPage: React.FC = () => {
   const handleEdit = (m: Model) => {
     setFormData({
       name: m.name,
-      serialNumber: m.serialNumber,
-      totalImpressions: m.totalImpressions,
+      serial_number: m.serial_number,
+      total_impressions: m.total_impressions,
       manufacturer: m.manufacturer,
       year: m.year,
-      groupId: m.groupId,
-      buyerId: m.buyerId,
-      sellerId: m.sellerId
+      group_id: m.group_id,
+      buyer_id: m.buyer_id,
+      seller_id: m.seller_id
     });
     setCurrentModelId(m.id);
     setIsEditing(true);
@@ -166,9 +166,9 @@ const MachineManagementPage: React.FC = () => {
   // Columns
   const columns: GridColDef[] = [
     { field:'name', headerName:'Name', flex:1, minWidth:150 },
-    { field:'serialNumber', headerName:'Serial Number', flex:1, minWidth:150 },
+    { field:'serial_number', headerName:'Serial Number', flex:1, minWidth:150 },
     { field:'manufacturer', headerName:'Manufacturer', flex:1, minWidth:150 },
-    { field:'totalImpressions', headerName:'Total Impressions', flex:1, minWidth:150 },
+    { field:'total_impressions', headerName:'Total Impressions', flex:1, minWidth:150 },
     { field:'year', headerName:'Year', flex:1, minWidth:100 },
     { field:'groupName', headerName:'Group', flex:1, minWidth:150 },
     { field:'buyerName', headerName:'Buyer', flex:1, minWidth:150 },
@@ -209,8 +209,8 @@ const MachineManagementPage: React.FC = () => {
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField label="Name" name="name" value={formData.name} onChange={handleInputChange} required/>
-              <TextField label="Serial Number" name="serialNumber" value={formData.serialNumber} onChange={handleInputChange} required/>
-              <TextField label="Total Impressions" name="totalImpressions" value={formData.totalImpressions} onChange={handleInputChange} required/>
+              <TextField label="Serial Number" name="serial_number" value={formData.serial_number} onChange={handleInputChange} required/>
+              <TextField label="Total Impressions" name="total_impressions" value={formData.total_impressions} onChange={handleInputChange} required/>
               <TextField label="Manufacturer" name="manufacturer" value={formData.manufacturer} onChange={handleInputChange} required/>
               <TextField 
                 label="Year" name="year" type="number" 
@@ -220,7 +220,7 @@ const MachineManagementPage: React.FC = () => {
 
               <FormControl fullWidth required>
                 <InputLabel>Group</InputLabel>
-                <Select name="groupId" value={formData.groupId} onChange={handleSelectChange} label="Group">
+                <Select name="group_id" value={formData.group_id} onChange={handleSelectChange} label="Group">
                   <MenuItem value={0} disabled>Select Group</MenuItem>
                   {groups.map(g=> <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}
                 </Select>
@@ -228,17 +228,17 @@ const MachineManagementPage: React.FC = () => {
 
               <FormControl fullWidth required>
                 <InputLabel>Buyer</InputLabel>
-                <Select name="buyerId" value={formData.buyerId} onChange={handleSelectChange} label="Buyer">
+                <Select name="buyer_id" value={formData.buyer_id} onChange={handleSelectChange} label="Buyer">
                   <MenuItem value={0} disabled>Select Buyer</MenuItem>
-                  {buyers.map(b=> <MenuItem key={b.id} value={b.id}>{b.companyName}</MenuItem>)}
+                  {buyers.map(b=> <MenuItem key={b.id} value={b.id}>{b.company_name}</MenuItem>)}
                 </Select>
               </FormControl>
 
               <FormControl fullWidth required>
                 <InputLabel>Seller</InputLabel>
-                <Select name="sellerId" value={formData.sellerId} onChange={handleSelectChange} label="Seller">
+                <Select name="seller_id" value={formData.seller_id} onChange={handleSelectChange} label="Seller">
                   <MenuItem value={0} disabled>Select Seller</MenuItem>
-                  {sellers.map(s=> <MenuItem key={s.id} value={s.id}>{s.companyName}</MenuItem>)}
+                  {sellers.map(s=> <MenuItem key={s.id} value={s.id}>{s.company_name}</MenuItem>)}
                 </Select>
               </FormControl>
             </Stack>

@@ -30,6 +30,7 @@ import ColorMeasurementManagementPage from '../Admin_SuperAdmin/ColorMeasurement
 import GeneralInformationQuestionsPage from '../Admin_SuperAdmin/GeneralInformationQuestionsPage';
 import ChangePassword from '../components/Reuseable/ChangePassword';
 import ControlStationThingsToCheckManagementPage from '../Admin_SuperAdmin/ControlStationThingsToCheckManagementPage';
+import TechSpecificationManagementPage from '../Admin_SuperAdmin/TechSpecificationManagementPage';
 
 // Protected route wrapper
 interface ProtectedRouteProps {
@@ -102,6 +103,7 @@ const AppRoutes: React.FC = () => {
             <Route path="control-station-checks" element={<ControlStationThingsToCheckManagementPage />} />
             <Route path="color-measuring-devices" element={<ColorMeasurementManagementPage />} />
             <Route path="general-questions" element={<GeneralInformationQuestionsPage />} />
+            <Route path="tech-specifications" element={<TechSpecificationManagementPage />} />
           </Route>
           
           <Route path="reports">

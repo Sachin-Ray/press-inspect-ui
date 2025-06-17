@@ -28,8 +28,8 @@ const InspectionForm: React.FC = () => {
   const nextStep = () => {
     if (step === 1) {
       // Validate machine selection
-      if (!formState.group || !formState.model || !formState.item || !formState.year) {
-        alert('Please complete all machine selection fields');
+      if (!formState.machineId) {
+        alert('Please selection the Machine');
         return;
       }
     } else if (step === 2) {

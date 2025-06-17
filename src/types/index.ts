@@ -50,6 +50,7 @@ export interface Checkpoint {
 }
 
 export interface FormState {
+  machineId: any;
   group: string;
   model: string;
   item: string;

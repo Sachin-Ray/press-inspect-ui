@@ -23,14 +23,14 @@ import {
 
 interface ControlStation {
   id: number;
-  stationName: string;
+  station_name: string;
 }
 
 const ControlStationManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'add' | 'view'>('add');
   const [stations, setStations] = useState<ControlStation[]>([]);
   const [filteredStations, setFilteredStations] = useState<ControlStation[]>([]);
-  const [formData, setFormData] = useState<{ stationName: string }>({ stationName: '' });
+  const [formData, setFormData] = useState<{ station_name: string }>({ station_name: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [currentStationId, setCurrentStationId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ const ControlStationManagementPage: React.FC = () => {
       const response = await fetchAllControlStation();
       const data = (response?.data?.data || []).map((item: any) => ({
         id: item.id,
-        stationName: item.stationName
+        station_name: item.station_name
       }));
       setStations(data);
       setFilteredStations(data);
@@ -60,7 +60,7 @@ const ControlStationManagementPage: React.FC = () => {
 
   useEffect(() => {
     const filtered = stations.filter((station) =>
-      (station?.stationName || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (station?.station_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredStations(filtered);
   }, [searchTerm, stations]);
@@ -74,7 +74,7 @@ const ControlStationManagementPage: React.FC = () => {
   };
 
   const handleClear = () => {
-    setFormData({ stationName: '' });
+    setFormData({ station_name: '' });
     setIsEditing(false);
     setCurrentStationId(null);
   };
@@ -82,7 +82,7 @@ const ControlStationManagementPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const apiData = {
-      stationName: formData.stationName
+      station_name: formData.station_name
     };
     try {
       if (isEditing && currentStationId) {
@@ -99,14 +99,14 @@ const ControlStationManagementPage: React.FC = () => {
   };
 
   const handleEdit = (station: ControlStation) => {
-    setFormData({ stationName: station.stationName });
+    setFormData({ station_name: station.station_name });
     setIsEditing(true);
     setCurrentStationId(station.id);
     setActiveTab('add');
   };
 
   const columns: GridColDef[] = [
-    { field: 'stationName', headerName: 'Control Station Name', flex: 1, minWidth: 200 },
+    { field: 'station_name', headerName: 'Control Station Name', flex: 1, minWidth: 200 },
     {
       field: 'actions',
       type: 'actions',
@@ -135,8 +135,8 @@ const ControlStationManagementPage: React.FC = () => {
             <TextField
               fullWidth
               label="Control Station Name"
-              name="stationName"
-              value={formData.stationName}
+              name="station_name"
+              value={formData.station_name}
               onChange={handleInputChange}
               margin="normal"
               required
