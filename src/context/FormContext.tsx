@@ -19,6 +19,8 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [data] = useState<FormData>(formData);
   
   const [formState, setFormState] = useState<FormState>({
+    machineName: '',
+    machineId: null,
     group: '',
     model: '',
     item: '',
@@ -176,6 +178,8 @@ export const FormProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Reset form state
   const resetForm = () => {
     setFormState({
+      machineName: '',
+    machineId: null,
       group: '',
       model: '',
       item: '',

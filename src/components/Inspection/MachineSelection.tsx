@@ -67,10 +67,11 @@ const MachineSelection: React.FC = () => {
         const machinesData = Array.isArray(response?.data?.data) ? response.data.data : [];
         setMachines(machinesData);
         
-        // If there's a machineId in formState, set the selected machine
         if (formState.machineId) {
+          debugger;
           const machine = machinesData.find(m => m.id === Number(formState.machineId)) || null;
-          setSelectedMachine(machine);
+          setSelectedMachine(machine?.name ? machine : null);
+      
         }
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -88,7 +89,8 @@ const MachineSelection: React.FC = () => {
     setSelectedMachine(machine);
     setFormState(prev => ({
       ...prev,
-      machineId: machineId
+      machineId: machineId,
+      machineName: machine ? machine.name : ''
     }));
   };
 

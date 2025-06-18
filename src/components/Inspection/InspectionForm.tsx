@@ -4,8 +4,8 @@ import { useForm } from '../../context/FormContext';
 import { useReport } from '../../context/ReportContext';
 import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, ArrowRight, Info, Save } from 'lucide-react';
-import CustomerInfoForm from './CustomerInfoForm';
 import MachineSelection from './MachineSelection';
+import GeneralInformation from './GeneralInformation';
 import UnitInspection from './UnitInspection';
 import InspectionSummary from './InspectionSummary';
 
@@ -23,28 +23,34 @@ const InspectionForm: React.FC = () => {
     location: '',
     date: new Date().toISOString().split('T')[0]
   });
+
+  const [generalInfo, setGeneralInfo] = useState({
+    model_id: 0,
+    inspector_id: 0,
+    inspection_place: '',
+    inspection_date: '',
+    answers: {} as Record<number, string>
+  });
   
   // Handle step changes
   const nextStep = () => {
-    if (step === 1) {
-      // Validate machine selection
-      if (!formState.machineId) {
-        alert('Please selection the Machine');
-        return;
-      }
-    } else if (step === 2) {
-      // Validate customer info
-      if (!customerInfo.customerName || !customerInfo.location) {
-        alert('Customer name and location are required');
-        return;
-      }
-    } else if (step === 3) {
+    // Validate current step before proceeding
+    if (step === 1 && !formState.machineId) {
+      alert('Please select a machine');
+      return;
+    } else if (step === 2 && (!generalInfo.inspection_place || !generalInfo.inspection_date)) {
+      alert('Inspection place and date are required');
+      return;
+    } else if (step === 3 && (!customerInfo.customerName || !customerInfo.location)) {
+      alert('Customer name and location are required');
+      return;
+    } else if (step === 4) {
       // Calculate scores before showing summary
       calculateScores();
     }
     
-    // If proceeding from step 2, create the report
-    if (step === 2 && !currentReport) {
+    // Create report after completing step 3 (Customer Information)
+    if (step === 3 && !currentReport) {
       const units = getInspectionUnits();
       
       if (!state.user) {
@@ -87,7 +93,12 @@ const InspectionForm: React.FC = () => {
   
   // Render progress steps
   const renderProgressSteps = () => {
-    const steps = ['Machine Selection', 'Customer Info', 'Inspection', 'Summary'];
+    const steps = [
+      'Machine Selection',
+      'General Information',
+      'Unit Configuration',
+      'Summary'
+    ];
     
     return (
       <div className="w-full py-6">
@@ -97,14 +108,14 @@ const InspectionForm: React.FC = () => {
               <div className="flex items-center relative">
                 <div 
                   className={`h-12 w-12 rounded-full border-2 flex items-center justify-center ${
-                    step > i 
+                    step > i + 1 
                       ? 'bg-[#0F52BA] border-[#0F52BA] text-white' 
                       : step === i + 1 
                       ? 'border-[#0F52BA] text-[#0F52BA]' 
                       : 'border-gray-300 text-gray-300'
                   }`}
                 >
-                  {step > i ? (
+                  {step > i + 1 ? (
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -124,7 +135,7 @@ const InspectionForm: React.FC = () => {
               {i < steps.length - 1 && (
                 <div 
                   className={`flex-auto border-t-2 ${
-                    step > i + 1 ? 'border-[#0F52BA]' : 'border-gray-300'
+                    step > i + 2 ? 'border-[#0F52BA]' : 'border-gray-300'
                   }`}
                 />
               )}
@@ -142,9 +153,11 @@ const InspectionForm: React.FC = () => {
         return <MachineSelection />;
       case 2:
         return (
-          <CustomerInfoForm 
-            customerInfo={customerInfo}
-            setCustomerInfo={setCustomerInfo}
+          <GeneralInformation
+            selectedModelName={formState.machineName || 'Unknown Machine'}
+            selectedModelId={formState.machineId || 0}
+            onComplete={(data) => setGeneralInfo(data)}
+            onBack={prevStep}
           />
         );
       case 3:
@@ -214,7 +227,7 @@ const InspectionForm: React.FC = () => {
             </button>
           )}
           
-          {step < 4 ? (
+          {step < 5 ? (
             <button
               type="button"
               onClick={nextStep}
