@@ -95,7 +95,7 @@ const MachineSelection: React.FC = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, margin: 'auto', maxWidth: 1200 }}>
+    <Paper elevation={3} sx={{ p: 3, margin: 'auto' }}>
       <Box sx={{ mb: 2 }}>
         <FormControl fullWidth>
           <InputLabel id="machine-select-label">Select Machine</InputLabel>
