@@ -86,6 +86,7 @@ const MachineSelection: React.FC = () => {
   const handleMachineChange = (event: SelectChangeEvent) => {
     const machineId = event.target.value as string;
     const machine = machines.find(m => m.id === Number(machineId)) || null;
+    console.log("Selected machine:", machine);
     setSelectedMachine(machine);
     setFormState(prev => ({
       ...prev,
