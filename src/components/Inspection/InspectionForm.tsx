@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// InspectionForm.tsx
+import React, { useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../../context/FormContext';
 import { useReport } from '../../context/ReportContext';
@@ -9,14 +10,37 @@ import GeneralInformation from './GeneralInformation';
 import UnitInspection from './UnitInspection';
 import InspectionSummary from './InspectionSummary';
 
+interface CustomerInfo {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  location: string;
+  date: string;
+}
+
+interface GeneralInfo {
+  model_id: number;
+  inspector_id: number;
+  inspection_place: string;
+  inspection_date: string;
+  answers: Record<number, string>;
+}
+
 const InspectionForm: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
   const { formState, getInspectionUnits, resetForm } = useForm();
-  const { createReport, currentReport, updateCheckpointStatus, updateCheckpointComment, calculateScores, saveReport } = useReport();
+  const { 
+    createReport, 
+    currentReport, 
+    updateCheckpointStatus, 
+    updateCheckpointComment, 
+    calculateScores, 
+    saveReport 
+  } = useReport();
   
   const [step, setStep] = useState(1);
-  const [customerInfo, setCustomerInfo] = useState({
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     customerName: '',
     customerEmail: '',
     customerPhone: '',
@@ -24,32 +48,32 @@ const InspectionForm: React.FC = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
-  const [generalInfo, setGeneralInfo] = useState({
+  const [generalInfo, setGeneralInfo] = useState<GeneralInfo>({
     model_id: 0,
     inspector_id: 0,
     inspection_place: '',
     inspection_date: '',
-    answers: {} as Record<number, string>
+    answers: {}
   });
-  
+
   // Handle step changes
   const nextStep = () => {
-    // Validate current step before proceeding
     if (step === 1 && !formState.machineId) {
       alert('Please select a machine');
       return;
-    } else if (step === 2 && (!generalInfo.inspection_place || !generalInfo.inspection_date)) {
-      alert('Inspection place and date are required');
-      return;
-    } else if (step === 3 && (!customerInfo.customerName || !customerInfo.location)) {
-      alert('Customer name and location are required');
-      return;
-    } else if (step === 4) {
-      // Calculate scores before showing summary
+    } 
+    // else if (step === 2 && (!generalInfo.inspection_place || !generalInfo.inspection_date)) {
+    //   alert('Inspection place and date are required');
+    //   return;
+    // }
+    // else if (step === 3 && (!customerInfo.customerName || !customerInfo.location)) {
+    //   alert('Customer name and location are required');
+    //   return;
+    // } 
+    else if (step === 4) {
       calculateScores();
     }
     
-    // Create report after completing step 3 (Customer Information)
     if (step === 3 && !currentReport) {
       const units = getInspectionUnits();
       
@@ -83,7 +107,6 @@ const InspectionForm: React.FC = () => {
     setStep(prev => prev - 1);
   };
   
-  // Handle final submission
   const handleSubmit = () => {
     calculateScores();
     saveReport();
@@ -91,12 +114,11 @@ const InspectionForm: React.FC = () => {
     navigate('/reports');
   };
   
-  // Render progress steps
   const renderProgressSteps = () => {
     const steps = [
       'Machine Selection',
       'General Information',
-      'Unit Configuration',
+      'Unit Inspection',
       'Summary'
     ];
     
@@ -146,7 +168,6 @@ const InspectionForm: React.FC = () => {
     );
   };
   
-  // Render step content
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -161,16 +182,19 @@ const InspectionForm: React.FC = () => {
           />
         );
       case 3:
-        return currentReport ? (
+        return (
           <UnitInspection
-            units={currentReport.units}
+            units={currentReport?.units || []}
             updateStatus={updateCheckpointStatus}
             updateComment={updateCheckpointComment}
+            onBack={prevStep}
+            onComplete={(units) => {
+              // Handle units data if needed
+              nextStep();
+            }}
+            machineId={formState.machineId} // Pass the machine ID
+      machineName={formState.machineName} 
           />
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-red-500">Error: Report data not found</p>
-          </div>
         );
       case 4:
         return currentReport ? (
@@ -227,7 +251,7 @@ const InspectionForm: React.FC = () => {
             </button>
           )}
           
-          {step < 5 ? (
+          {step < 4 ? (
             <button
               type="button"
               onClick={nextStep}

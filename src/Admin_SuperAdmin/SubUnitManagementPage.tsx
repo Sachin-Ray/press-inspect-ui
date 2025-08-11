@@ -29,9 +29,9 @@ import {
 
 interface SubUnit {
   id: number;
-  subUnitName: string;
-  unitId: number;
-  unitName?: string;
+  sub_unit_name: string;
+  unit_id: number;
+  unit?: string;
 }
 
 interface Unit {
@@ -44,12 +44,12 @@ const SubUnitManagementPage: React.FC = () => {
   const [subUnits, setSubUnits] = useState<SubUnit[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [filteredSubUnits, setFilteredSubUnits] = useState<SubUnit[]>([]);
-  const [formData, setFormData] = useState<{ subUnitName: string; unitId: number }>({
-    subUnitName: '',
-    unitId: 0
+  const [formData, setFormData] = useState<{ sub_unit_name: string; unit_id: number }>({
+    sub_unit_name: '',
+    unit_id: 0
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [currentSubUnitId, setCurrentSubUnitId] = useState<number | null>(null);
+  const [currentSubunit_id, setCurrentSubunit_id] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 5 });
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,8 +60,8 @@ const SubUnitManagementPage: React.FC = () => {
       const response = await fetchAllSubUnits();
       const data: SubUnit[] = (response?.data?.data || []).map((item: any) => ({
         id: item.id,
-        subUnitName: item.subUnitName,
-        unitId: item.unitId || item.unit?.id,
+        sub_unit_name: item.sub_unit_name,
+        unit_id: item.unit_id || item.unit?.id,
         unitName: item.unit?.name || ''
       }));
       setSubUnits(data);
@@ -95,7 +95,7 @@ const SubUnitManagementPage: React.FC = () => {
   useEffect(() => {
     setFilteredSubUnits(
       subUnits.filter(su =>
-        su.subUnitName.toLowerCase().includes(searchTerm.toLowerCase())
+        su.sub_unit_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
   }, [searchTerm, subUnits]);
@@ -106,24 +106,24 @@ const SubUnitManagementPage: React.FC = () => {
   };
 
   const handleSelectChange = (e: SelectChangeEvent<number>) => {
-    setFormData(prev => ({ ...prev, unitId: Number(e.target.value) }));
+    setFormData(prev => ({ ...prev, unit_id: Number(e.target.value) }));
   };
 
   const handleClear = () => {
-    setFormData({ subUnitName: '', unitId: 0 });
+    setFormData({ sub_unit_name: '', unit_id: 0 });
     setIsEditing(false);
-    setCurrentSubUnitId(null);
+    setCurrentSubunit_id(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const apiData = {
-      subUnitName: formData.subUnitName,
-      unitId: formData.unitId
+      sub_unit_name: formData.sub_unit_name,
+      unit_id: formData.unit_id
     };
     try {
-      if (isEditing && currentSubUnitId) {
-        await updateSubUnitById(currentSubUnitId, apiData);
+      if (isEditing && currentSubunit_id) {
+        await updateSubUnitById(currentSubunit_id, apiData);
       } else {
         await createSubUnit(apiData);
       }
@@ -136,15 +136,15 @@ const SubUnitManagementPage: React.FC = () => {
   };
 
   const handleEdit = (su: SubUnit) => {
-    setFormData({ subUnitName: su.subUnitName, unitId: su.unitId });
+    setFormData({ sub_unit_name: su.sub_unit_name, unit_id: su.unit_id });
     setIsEditing(true);
-    setCurrentSubUnitId(su.id);
+    setCurrentSubunit_id(su.id);
     setActiveTab('add');
   };
 
   const columns: GridColDef[] = [
     {
-      field: 'subUnitName',
+      field: 'sub_unit_name',
       headerName: 'Sub-Unit Name',
       flex: 1,
       minWidth: 200
@@ -183,8 +183,8 @@ const SubUnitManagementPage: React.FC = () => {
             <TextField
               fullWidth
               label="Sub-Unit Name"
-              name="subUnitName"
-              value={formData.subUnitName}
+              name="sub_unit_name"
+              value={formData.sub_unit_name}
               onChange={handleInputChange}
               margin="normal"
               required
@@ -194,8 +194,8 @@ const SubUnitManagementPage: React.FC = () => {
               <InputLabel id="unit-label">Unit</InputLabel>
               <Select
                 labelId="unit-label"
-                name="unitId"
-                value={formData.unitId}
+                name="unit_id"
+                value={formData.unit_id}
                 onChange={handleSelectChange}
                 label="Unit"
               >

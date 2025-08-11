@@ -28,13 +28,13 @@ import {
 
 interface ControlStation {
   id: number;
-  stationName: string;
+  station_name: string;
 }
 
 interface ControlStationThingsToCheck {
   id: number;
-  thingsToCheck: string;
-  controlStationId: number;
+  things_to_check: string;
+  control_station_id: number;
   controlStationName?: string;
 }
 
@@ -44,11 +44,11 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
   const [filteredItems, setFilteredItems] = useState<ControlStationThingsToCheck[]>([]);
   const [controlStations, setControlStations] = useState<ControlStation[]>([]);
   const [formData, setFormData] = useState<{
-    thingsToCheck: string;
-    controlStationId: number | '';
+    things_to_check: string;
+    control_station_id: number | '';
   }>({ 
-    thingsToCheck: '',
-    controlStationId: ''
+    things_to_check: '',
+    control_station_id: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [currentItemId, setCurrentItemId] = useState<number | null>(null);
@@ -63,7 +63,7 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
         const stationsResponse = await fetchAllControlStation();
         const stationsData = (stationsResponse?.data?.data || []).map((item: any) => ({
           id: item.id,
-          stationName: item.stationName
+          station_name: item.station_name
         }));
         setControlStations(stationsData);
       } catch (error) {
@@ -81,9 +81,9 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
       
       const data = (response?.data?.data || []).map((item: any) => ({
         id: item.id,
-        thingsToCheck: item.thingsToCheck,
-        controlStationId: item.controlStationId,
-        controlStationName: controlStations.find((s: ControlStation) => s.id === item.controlStationId)?.stationName || 'Unknown'
+        things_to_check: item.things_to_check,
+        control_station_id: item.control_station_id,
+        controlStationName: controlStations.find((s: ControlStation) => s.id === item.control_station_id)?.station_name || 'Unknown'
       }));
       
       setItems(data);
@@ -103,7 +103,7 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
 
   useEffect(() => {
     const filtered = items.filter((item) =>
-      (item?.thingsToCheck || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item?.things_to_check || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item?.controlStationName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredItems(filtered);
@@ -127,8 +127,8 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
 
   const handleClear = () => {
     setFormData({ 
-      thingsToCheck: '',
-      controlStationId: ''
+      things_to_check: '',
+      control_station_id: ''
     });
     setIsEditing(false);
     setCurrentItemId(null);
@@ -137,14 +137,14 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.controlStationId === '') {
+    if (formData.control_station_id === '') {
       alert('Please select a control station');
       return;
     }
     
     const apiData = {
-      thingsToCheck: formData.thingsToCheck,
-      controlStationId: formData.controlStationId as number
+      things_to_check: formData.things_to_check,
+      control_station_id: formData.control_station_id as number
     };
     
     try {
@@ -163,8 +163,8 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
 
   const handleEdit = (item: ControlStationThingsToCheck) => {
     setFormData({ 
-      thingsToCheck: item.thingsToCheck,
-      controlStationId: item.controlStationId
+      things_to_check: item.things_to_check,
+      control_station_id: item.control_station_id
     });
     setIsEditing(true);
     setCurrentItemId(item.id);
@@ -172,7 +172,7 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: 'thingsToCheck', headerName: 'Things To Check', flex: 1, minWidth: 200 },
+    { field: 'things_to_check', headerName: 'Things To Check', flex: 1, minWidth: 200 },
     { 
       field: 'controlStationName', 
       headerName: 'Control Station', 
@@ -209,15 +209,15 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
               <InputLabel id="control-station-label">Control Station</InputLabel>
               <Select
                 labelId="control-station-label"
-                id="controlStationId"
-                name="controlStationId"
-                value={formData.controlStationId}
+                id="control_station_id"
+                name="control_station_id"
+                value={formData.control_station_id}
                 label="Control Station"
                 onChange={handleSelectChange}
               >
                 {controlStations.map((station) => (
                   <MenuItem key={station.id} value={station.id}>
-                    {station.stationName}
+                    {station.station_name}
                   </MenuItem>
                 ))}
               </Select>
@@ -226,8 +226,8 @@ const ControlStationThingsToCheckManagementPage: React.FC = () => {
             <TextField
               fullWidth
               label="Things To Check"
-              name="thingsToCheck"
-              value={formData.thingsToCheck}
+              name="things_to_check"
+              value={formData.things_to_check}
               onChange={handleInputChange}
               margin="normal"
               required

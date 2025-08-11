@@ -170,3 +170,17 @@ export const updateTechSpecificationById = (specId: number, formData: FormData) 
 };
 
 export const fetchAllTechSpecifications = () => api.get('/models/getAllTechSpecficationPdf');
+
+export const fetchAllStationsName = () => api.get('/reports/getAll/controlStations');
+
+export const fetchAllConditionsName = () => api.get('/reports/getAll/conditions');
+
+export const fetchAllColorMeasurements = () => api.get('/reports/getAll/colorMeasurments');
+
+// Things to Check APIs
+export const fetchThingsToCheckForSubUnit = (subUnitId: number) => 
+  api.get(`/units/read/things-to-check-units/${subUnitId}`);
+
+// Sub-Units APIs
+export const fetchSubUnitsForUnit = (unitId: number) => 
+  api.get(`/units/read/sub-units/${unitId}`);
