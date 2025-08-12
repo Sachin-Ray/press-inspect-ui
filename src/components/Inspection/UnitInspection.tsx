@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, MessageCircle, Plus, X } from 'lucide-react';
+import { useForm } from '../../context/FormContext';
 import { fetchAllConditionsName, fetchAllUnits, fetchSubUnitsForUnit, fetchThingsToCheckForSubUnit } from '../../services/api';
 
 interface Unit {
@@ -42,7 +43,7 @@ interface InspectionUnit {
 }
 
 interface UnitInspectionProps {
-  onComplete: (units: InspectionUnit[]) => void;
+  onComplete: () => void;
   onBack: () => void;
   initialUnits?: InspectionUnit[];
 }
@@ -52,8 +53,9 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
   onBack,
   initialUnits = []
 }) => {
+  const { formState, setFormState } = useForm();
   const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnits, setSelectedUnits] = useState<InspectionUnit[]>(initialUnits);
+  const [selectedUnits, setSelectedUnits] = useState<InspectionUnit[]>(formState.units || initialUnits);
   const [conditions, setConditions] = useState<Condition[]>([]);
   const [expandedUnit, setExpandedUnit] = useState<number | null>(null);
   const [remarkOpen, setRemarkOpen] = useState<{unitIndex: number, subUnitIndex: number, checkpointIndex: number} | null>(null);
@@ -69,12 +71,10 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch units
         const unitsResponse = await fetchAllUnits();
         const unitsData = unitsResponse.data?.data || unitsResponse.data || [];
         setUnits(unitsData);
 
-        // Fetch conditions
         const conditionsResponse = await fetchAllConditionsName();
         const conditionsData = conditionsResponse.data?.data || conditionsResponse.data || [];
         setConditions(conditionsData);
@@ -97,6 +97,13 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    setFormState(prev => ({
+      ...prev,
+      units: selectedUnits
+    }));
+  }, [selectedUnits]);
 
   const toggleUnit = (index: number) => {
     setExpandedUnit(expandedUnit === index ? null : index);
@@ -137,7 +144,6 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
   const handleAddUnit = async () => {
     if (!selectedUnitToAdd) return;
 
-    // Check if unit is already added
     if (selectedUnits.some(unit => unit.id === selectedUnitToAdd.id)) {
       alert('This unit has already been added');
       return;
@@ -146,7 +152,6 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
     try {
       setLoading(prev => ({ ...prev, subUnits: true }));
       
-      // Fetch sub-units for the selected unit
       const subUnitsResponse = await fetchSubUnitsForUnit(selectedUnitToAdd.id);
       const subUnitsData = subUnitsResponse.data?.data || subUnitsResponse.data || [];
       const subUnits = Array.isArray(subUnitsData) ? subUnitsData : subUnitsData.data || [];
@@ -156,7 +161,6 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
         return;
       }
 
-      // Fetch things to check for each sub-unit and create checkpoints
       const subUnitsWithCheckpoints = await Promise.all(
         subUnits.map(async (subUnit: SubUnit) => {
           const thingsResponse = await fetchThingsToCheckForSubUnit(subUnit.id);
@@ -196,7 +200,7 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
   };
 
   const handleSubmit = () => {
-    onComplete(selectedUnits);
+    onComplete();
   };
 
   if (loading.units || loading.conditions) {
@@ -396,7 +400,6 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
         </div>
       ))}
 
-      {/* Unit Selection Modal */}
       {showUnitSelector && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -429,7 +432,6 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
         </div>
       )}
 
-      {/* Confirmation Modal for Selected Unit */}
       {selectedUnitToAdd && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -467,13 +469,7 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
 
       <div className="flex justify-between pt-6 border-t border-gray-200">
         <div className="flex space-x-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Back
-          </button>
+          
           <button
             type="button"
             onClick={handleAddUnitClick}
@@ -484,14 +480,6 @@ const UnitInspection: React.FC<UnitInspectionProps> = ({
             Add Unit
           </button>
         </div>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={selectedUnits.length === 0}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Save and Continue
-        </button>
       </div>
     </div>
   );

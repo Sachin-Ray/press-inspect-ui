@@ -58,7 +58,6 @@ const MachineSelection: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
 
-  // Fetch all machines on component mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -68,10 +67,8 @@ const MachineSelection: React.FC = () => {
         setMachines(machinesData);
         
         if (formState.machineId) {
-          debugger;
-          const machine = machinesData.find(m => m.id === Number(formState.machineId)) || null;
-          setSelectedMachine(machine?.name ? machine : null);
-      
+          const machine = machinesData.find(m => m.id === formState.machineId) || null;
+          setSelectedMachine(machine);
         }
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -86,12 +83,13 @@ const MachineSelection: React.FC = () => {
   const handleMachineChange = (event: SelectChangeEvent) => {
     const machineId = event.target.value as string;
     const machine = machines.find(m => m.id === Number(machineId)) || null;
-    console.log("Selected machine:", machine);
+    
     setSelectedMachine(machine);
     setFormState(prev => ({
       ...prev,
-      machineId: machineId,
-      machineName: machine ? machine.name : ''
+      machineId: Number(machineId),
+      machineName: machine ? machine.name : '',
+      machineDetails: machine
     }));
   };
 
@@ -127,7 +125,6 @@ const MachineSelection: React.FC = () => {
           <Divider sx={{ mb: 3 }} />
           
           <Grid container spacing={3}>
-            {/* Machine Details */}
             <Grid item xs={12} md={6}>
               <Card elevation={2}>
                 <CardContent>
@@ -162,7 +159,6 @@ const MachineSelection: React.FC = () => {
               </Card>
             </Grid>
 
-            {/* Group Details */}
             <Grid item xs={12} md={6}>
               <Card elevation={2}>
                 <CardContent>
@@ -176,7 +172,6 @@ const MachineSelection: React.FC = () => {
               </Card>
             </Grid>
 
-            {/* Seller Details */}
             <Grid item xs={12} md={6}>
               <Card elevation={2}>
                 <CardContent>
@@ -191,7 +186,6 @@ const MachineSelection: React.FC = () => {
               </Card>
             </Grid>
 
-            {/* Buyer Details */}
             <Grid item xs={12} md={6}>
               <Card elevation={2}>
                 <CardContent>

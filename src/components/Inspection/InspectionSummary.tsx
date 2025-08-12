@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useForm } from '../../context/FormContext';
 
 interface InspectionReport {
-  // From MachineSelection
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  location?: string;
+  date?: string;
   machine: {
     id: number;
     name: string;
@@ -20,8 +25,6 @@ interface InspectionReport {
       address: string;
     };
   };
-  
-  // From GeneralInformation
   generalInfo: {
     inspectionPlace: string;
     inspectionDate: string;
@@ -46,8 +49,6 @@ interface InspectionReport {
       calibrationComments: string;
     };
   };
-  
-  // From UnitInspection
   units: Array<{
     id: number;
     name: string;
@@ -63,71 +64,63 @@ interface InspectionReport {
     }>;
     unitScore: number;
   }>;
-  
-  // Calculated values
   overallRating: 'Excellent' | 'Good' | 'Average' | 'Not Good';
   overallScore: number;
 }
 
+const userData = JSON.parse(localStorage.getItem('user') || '{}');
+  const inspectorId = userData.id || 0;
+  const inspectorRole = userData.roles || 'Unknown';
+
 interface InspectionSummaryProps {
   report?: InspectionReport;
+  questions?: {
+    id: number;
+    question: string;
+  }[];
+  controlStations?: Array<{
+    id: number;
+    name: string;
+    thingToChecks: Array<{
+      id: number;
+      things_to_check: string;
+    }>;
+  }>;
 }
-
-const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
-  // Safe default values
-  const safeReport = report || {
+const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report, questions = [],controlStations = []  }) => {
+  const { formState } = useForm();
+  const [expandedUnits, setExpandedUnits] = useState<Record<number, boolean>>({});
+  
+  const safeReport = {
+    ...report,
+    customerInfo: formState.customerInfo,
     machine: {
-      id: 0,
-      name: 'Unknown Machine',
-      serialNumber: 'N/A',
-      manufacturer: 'N/A',
-      year: 0,
-      totalImpressions: '0',
-      group: 'N/A',
+      id: formState.machineId || 0,
+      name: formState.machineName || 'Unknown Machine',
+      serialNumber: formState.machineDetails?.serial_number || 'N/A',
+      manufacturer: formState.machineDetails?.manufacturer || 'N/A',
+      year: formState.machineDetails?.year || 0,
+      totalImpressions: formState.machineDetails?.total_impressions || '0',
+      group: formState.machineDetails?.group?.name || 'N/A',
       seller: {
-        companyName: 'N/A',
-        address: 'N/A'
+        companyName: formState.machineDetails?.seller?.company_name || 'N/A',
+        address: formState.machineDetails?.seller?.address || 'N/A',
       },
       buyer: {
-        companyName: 'N/A',
-        address: 'N/A'
-      }
-    },
-    generalInfo: {
-      inspectionPlace: 'N/A',
-      inspectionDate: 'N/A',
-      inspectorName: 'N/A',
-      inspectorRole: 'N/A',
-      answers: {},
-      controlStation: {
-        stationName: 'N/A',
-        modelType: 'N/A',
-        checks: []
+        companyName: formState.machineDetails?.buyer?.company_name || 'N/A',
+        address: formState.machineDetails?.buyer?.address || 'N/A',
       },
-      colorMeasurement: {
-        deviceName: 'N/A',
-        version: 'N/A',
-        deviceCondition: 'N/A',
-        deviceComments: 'N/A',
-        calibrationStatus: 'N/A',
-        calibrationComments: 'N/A'
-      }
     },
-    units: [],
-    overallRating: 'Not Good',
-    overallScore: 0
+    generalInfo: formState.generalInfo,
+    units: formState.units
   };
 
-  // State for expanded units
-  const [expandedUnits, setExpandedUnits] = useState<Record<number, boolean>>({});
-
-  // Calculate statistics
   const calculateStats = () => {
     let good = 0, bad = 0, better = 0, total = 0;
     
-    safeReport.units.forEach(unit => {
-      unit.subUnits?.forEach(subUnit => {
-        subUnit.checkpoints?.forEach(checkpoint => {
+    safeReport.units.forEach((unit: any) => {
+      unit.subUnits?.forEach((subUnit: any) => {
+        subUnit.checkpoints?.forEach((checkpoint: any) => {
           total++;
           if (checkpoint.condition === 'Good') good++;
           else if (checkpoint.condition === 'Bad') bad++;
@@ -141,7 +134,6 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
 
   const stats = calculateStats();
 
-  // Toggle unit expansion
   const toggleUnit = (unitId: number) => {
     setExpandedUnits(prev => ({
       ...prev,
@@ -149,7 +141,6 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
     }));
   };
 
-  // Get rating color
   const getRatingColor = (rating: string) => {
     switch (rating) {
       case 'Excellent': return 'bg-green-100 text-green-800';
@@ -160,25 +151,27 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
     }
   };
 
-  // Get score color
   const getScoreColor = (score: number) => {
     if (score >= 70) return 'text-green-600';
     if (score >= 50) return 'text-yellow-600';
     return 'text-red-600';
   };
 
-  if (!report) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500">Error: Report data not found</p>
-        <p className="text-gray-500 mt-2">Please complete the inspection steps first</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 p-4 max-w-6xl mx-auto">
-      {/* Header Section */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3">
+                <span className="text-sm text-gray-500">Date:</span>
+                <span className="col-span-2 font-medium">{safeReport.customerInfo.date}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -189,14 +182,13 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
           </div>
           <div className="flex flex-col items-center">
             <span className="text-sm text-gray-500 mb-1">Overall Rating</span>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRatingColor(safeReport.overallRating)}`}>
-              {safeReport.overallRating} ({safeReport.overallScore}%)
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRatingColor(safeReport?.overallRating ?? '')}`}>
+              {safeReport.overallRating ?? '80'} ({safeReport?.overallScore}%)
             </span>
           </div>
         </div>
       </div>
 
-      {/* Machine Information */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Machine Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -205,7 +197,7 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
             <div className="space-y-3">
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Name:</span>
-                <span className="col-span-2 font-medium">{safeReport.machine.name}</span>
+                <span className="col-span-2 font-medium">{safeReport.machine?.name}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Serial Number:</span>
@@ -229,7 +221,6 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
               </div>
             </div>
           </div>
-
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-3">Ownership Details</h3>
             <div className="space-y-4">
@@ -252,7 +243,6 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
         </div>
       </div>
 
-      {/* General Information */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Inspection Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -269,97 +259,117 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Inspector:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.inspectorName}</span>
+                <span className="col-span-2 font-medium">{inspectorId}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Role:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.inspectorRole}</span>
+                <span className="col-span-2 font-medium">{inspectorRole}</span>
               </div>
             </div>
-
             {Object.keys(safeReport.generalInfo.answers).length > 0 && (
               <>
                 <h3 className="text-lg font-medium text-gray-900 mt-6 mb-3">General Questions</h3>
                 <div className="space-y-3">
-                  {Object.entries(safeReport.generalInfo.answers).map(([questionId, answer]) => (
-                    <div key={questionId} className="grid grid-cols-3">
-                      <span className="text-sm text-gray-500">Q{questionId}:</span>
-                      <span className="col-span-2 font-medium">{answer || 'Not answered'}</span>
-                    </div>
-                  ))}
-                </div>
+  {Object.entries(safeReport.generalInfo.answers).map(([questionId, answer]) => {
+    // Find the question text from your questions data
+    let questionText = `Question ${questionId}`;
+    if (questions && questions.length > 0) {
+      const found = questions.find(q => q.id === parseInt(questionId, 10));
+      if (found) questionText = found.question;
+    }
+    return (
+      <div key={questionId} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <span className="text-sm text-gray-500">{questionText}</span>
+        <span className="md:col-span-2 font-medium">{answer || 'Not answered'}</span>
+      </div>
+    );
+  })}
+</div>
               </>
             )}
           </div>
-
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-3">Control Station</h3>
             <div className="space-y-3">
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Station:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.controlStation.stationName}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.controlStation?.stationId}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Model Type:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.controlStation.modelType}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.controlStation?.modelType}</span>
               </div>
-              
-              {safeReport.generalInfo.controlStation.checks.length > 0 && (
-                <>
-                  <h4 className="text-md font-medium text-gray-800 mt-4 mb-2">Checks</h4>
-                  <div className="space-y-2">
-                    {safeReport.generalInfo.controlStation.checks.map((check, index) => (
-                      <div key={index} className="border-b pb-2 last:border-0">
-                        <p className="font-medium">{check.thingToCheck}</p>
-                        <div className="grid grid-cols-2 text-sm">
-                          <span><span className="text-gray-500">Condition:</span> {check.condition}</span>
-                          <span><span className="text-gray-500">Remarks:</span> {check.remarks || 'None'}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+              {safeReport.generalInfo.controlStation?.checks && 
+ Object.entries(safeReport.generalInfo.controlStation.checks).length > 0 && (
+  <>
+    <h4 className="text-md font-medium text-gray-800 mt-4 mb-2">Checks</h4>
+    <div className="space-y-3">
+      {safeReport.generalInfo.controlStation?.checks && 
+  Object.entries(safeReport.generalInfo.controlStation.checks).length > 0 && (
+    <>
+      <h4 className="text-md font-medium text-gray-800 mt-4 mb-2">Checks</h4>
+      <div className="space-y-3">
+        {Object.entries(safeReport.generalInfo.controlStation.checks).map(([checkId, check]) => {
+          // If you don't have access to controlStations, just display the check ID
+          const checkText = check.thingToCheck || `${checkId}`;
+          
+          return (
+            <div key={checkId} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <span className="text-sm text-gray-500">{checkText}</span>
+              <span className="text-sm font-medium">
+                <span className="text-gray-500">Condition: </span>
+                {check.condition || 'Not specified'}
+              </span>
+              <span className="text-sm font-medium">
+                <span className="text-gray-500">Remarks: </span>
+                {check.remarks || 'None'}
+              </span>
             </div>
-
+          );
+        })}
+      </div>
+    </>
+)}
+    </div>
+  </>
+)}
+            </div>
             <h3 className="text-lg font-medium text-gray-900 mt-6 mb-3">Color Measurement</h3>
             <div className="space-y-3">
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Device:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement.deviceName}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement?.deviceId}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Version:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement.version}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement?.version}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Condition:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement.deviceCondition}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement?.deviceCondition}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Comments:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement.deviceComments || 'None'}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement?.deviceComments || 'None'}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Calibration:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement.calibrationStatus}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement?.calibrationStatus}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Calibration Comments:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement.calibrationComments || 'None'}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.colorMeasurement?.calibrationComments || 'None'}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Unit Inspection Results */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Unit Inspection Results</h2>
+        {/* <h2 className="text-xl font-semibold text-gray-900 mb-4">Unit Inspection Results</h2> */}
         
-        {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
+        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"> */}
+          {/* <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-sm text-gray-500">Total Checkpoints</div>
             <div className="text-xl font-semibold">{stats.total}</div>
           </div>
@@ -374,10 +384,9 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
           <div className="bg-red-50 p-4 rounded-lg">
             <div className="text-sm text-red-600">Bad</div>
             <div className="text-xl font-semibold text-red-700">{stats.bad}</div>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
 
-        {/* Unit Scores */}
         {safeReport.units.length > 0 ? (
           <>
             <h3 className="text-lg font-medium text-gray-900 mb-3">Unit Performance</h3>
@@ -395,7 +404,7 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report }) => {
                         unit.unitScore >= 50 ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        Score: {unit.unitScore}%
+                        Score: {unit.unitScore ?? '80'}%
                       </span>
                       {expandedUnits[unit.id] ? (
                         <ChevronUp className="h-5 w-5 text-gray-500" />

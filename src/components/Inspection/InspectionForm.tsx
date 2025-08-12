@@ -1,5 +1,4 @@
-// InspectionForm.tsx
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../../context/FormContext';
 import { useReport } from '../../context/ReportContext';
@@ -10,92 +9,44 @@ import GeneralInformation from './GeneralInformation';
 import UnitInspection from './UnitInspection';
 import InspectionSummary from './InspectionSummary';
 
-interface CustomerInfo {
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  location: string;
-  date: string;
-}
-
-interface GeneralInfo {
-  model_id: number;
-  inspector_id: number;
-  inspection_place: string;
-  inspection_date: string;
-  answers: Record<number, string>;
-}
-
 const InspectionForm: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
-  const { formState, getInspectionUnits, resetForm } = useForm();
+  const { formState, resetForm } = useForm();
   const { 
     createReport, 
     currentReport, 
-    updateCheckpointStatus, 
-    updateCheckpointComment, 
     calculateScores, 
     saveReport 
   } = useReport();
   
   const [step, setStep] = useState(1);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    location: '',
-    date: new Date().toISOString().split('T')[0]
-  });
 
-  const [generalInfo, setGeneralInfo] = useState<GeneralInfo>({
-    model_id: 0,
-    inspector_id: 0,
-    inspection_place: '',
-    inspection_date: '',
-    answers: {}
-  });
-
-  // Handle step changes
   const nextStep = () => {
     if (step === 1 && !formState.machineId) {
       alert('Please select a machine');
       return;
-    } 
-    // else if (step === 2 && (!generalInfo.inspection_place || !generalInfo.inspection_date)) {
-    //   alert('Inspection place and date are required');
-    //   return;
-    // }
-    // else if (step === 3 && (!customerInfo.customerName || !customerInfo.location)) {
-    //   alert('Customer name and location are required');
-    //   return;
-    // } 
-    else if (step === 4) {
+    }
+    
+    if (step === 4) {
       calculateScores();
     }
     
     if (step === 3 && !currentReport) {
-      const units = getInspectionUnits();
-      
-      if (!state.user) {
-        alert('User information is missing');
-        return;
-      }
-      
       createReport({
-        userId: state.user.id,
-        inspectorName: state.user.name,
-        registrationId: state.user.registrationId || 'N/A',
-        group: formState.group,
-        model: formState.model,
-        item: formState.item,
-        year: formState.year,
-        date: customerInfo.date,
-        location: customerInfo.location,
-        customerName: customerInfo.customerName,
-        customerEmail: customerInfo.customerEmail,
-        customerPhone: customerInfo.customerPhone,
-        units,
+        userId: state.user?.id || '',
+        inspectorName: state.user?.name || '',
+        registrationId: state.user?.registrationId || 'N/A',
+        group: formState.machineDetails?.group?.name || '',
+        model: formState.machineName,
+        item: formState.machineDetails?.serial_number || '',
+        year: formState.machineDetails?.year !== undefined ? String(formState.machineDetails.year) : '',
+        date: formState.customerInfo.date,
+        location: formState.customerInfo.location,
+        customerName: formState.customerInfo.customerName,
+        customerEmail: formState.customerInfo.customerEmail,
+        customerPhone: formState.customerInfo.customerPhone,
+        units: formState.units,
         comments: ''
       });
     }
@@ -177,33 +128,28 @@ const InspectionForm: React.FC = () => {
           <GeneralInformation
             selectedModelName={formState.machineName || 'Unknown Machine'}
             selectedModelId={formState.machineId || 0}
-            onComplete={(data) => setGeneralInfo(data)}
+            onComplete={() => nextStep()}
             onBack={prevStep}
           />
         );
       case 3:
         return (
           <UnitInspection
-            units={currentReport?.units || []}
-            updateStatus={updateCheckpointStatus}
-            updateComment={updateCheckpointComment}
+            initialUnits={formState.units}
             onBack={prevStep}
-            onComplete={(units) => {
-              // Handle units data if needed
-              nextStep();
-            }}
-            machineId={formState.machineId} // Pass the machine ID
-      machineName={formState.machineName} 
+            onComplete={() => nextStep()}
           />
         );
       case 4:
-        return currentReport ? (
-          <InspectionSummary report={currentReport} />
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-red-500">Error: Report data not found</p>
-          </div>
-        );
+  return (
+    <InspectionSummary 
+      report={currentReport as any} 
+      questions={formState.generalInfo.questions?.map(q => ({
+        id: q.id,
+        question: q.text
+      }))} // Pass the questions in expected format
+    />
+  );
       default:
         return null;
     }

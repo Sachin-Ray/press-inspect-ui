@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm as useFormContext } from '../../context/FormContext';
 import { fetchAllConditionsName, fetchAllGeneralInfoQuestions, fetchAllStationsName, fetchAllColorMeasurements } from '../../services/api';
 
 interface Question {
@@ -68,7 +69,7 @@ interface GeneralInformationFormData {
 interface GeneralInformationProps {
   selectedModelName: string;
   selectedModelId: number;
-  onComplete: (data: GeneralInformationFormData) => void;
+  onComplete: () => void;
   onBack: () => void;
 }
 
@@ -78,6 +79,7 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
   onComplete,
   onBack 
 }) => {
+  const { formState, setFormState } = useFormContext();
   const [isQuestionsOpen, setIsQuestionsOpen] = useState(true);
   const [isControlStationOpen, setIsControlStationOpen] = useState(true);
   const [isColorMeasurementOpen, setIsColorMeasurementOpen] = useState(true);
@@ -104,15 +106,15 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
     defaultValues: {
       model_id: selectedModelId,
       inspector_id: 0,
-      inspection_place: '',
-      inspection_date: '',
-      answers: {},
-      controlStation: {
+      inspection_place: formState.generalInfo.inspectionPlace || '',
+      inspection_date: formState.generalInfo.inspectionDate || '',
+      answers: formState.generalInfo.answers || {},
+      controlStation: formState.generalInfo.controlStation || {
         stationId: null,
         modelType: '',
         checks: {}
       },
-      colorMeasurement: {
+      colorMeasurement: formState.generalInfo.colorMeasurement || {
         deviceId: null,
         version: '',
         deviceCondition: '',
@@ -123,12 +125,10 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
     }
   });
   
-  // Get user data from localStorage
   const userData = JSON.parse(localStorage.getItem('user') || '{}');
   const inspectorId = userData.id || 0;
   const inspectorRole = userData.roles || 'Unknown';
 
-  // Watch the form data
   const answers = watch('answers') || {};
   const controlStationData = watch('controlStation') || { stationId: null, modelType: '', checks: {} };
   const colorMeasurementData = watch('colorMeasurement') || {
@@ -143,22 +143,18 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch questions
         const questionsResponse = await fetchAllGeneralInfoQuestions();
         const questionsData = questionsResponse.data?.data || questionsResponse.data || [];
         setQuestions(questionsData);
 
-        // Fetch control stations
         const stationsResponse = await fetchAllStationsName();
         const stationsData = stationsResponse.data?.data || stationsResponse.data || [];
         setControlStations(stationsData);
 
-        // Fetch conditions
         const conditionsResponse = await fetchAllConditionsName();
         const conditionsData = conditionsResponse.data?.data || conditionsResponse.data || [];
         setConditions(conditionsData);
 
-        // Fetch color measurements
         const colorResponse = await fetchAllColorMeasurements();
         const colorData = colorResponse.data?.data || colorResponse.data || [];
         setColorMeasurements(colorData);
@@ -189,13 +185,45 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
   }, [inspectorId, setValue]);
 
   const onSubmit: SubmitHandler<GeneralInformationFormData> = (data) => {
-    const completeData = {
-      ...data,
-      model_id: selectedModelId,
-      inspector_id: inspectorId,
-    };
-    onComplete(completeData);
+  const completeData = {
+    ...data,
+    model_id: selectedModelId,
+    inspector_id: inspectorId,
   };
+  
+  setFormState(prev => ({
+    ...prev,
+    generalInfo: {
+      ...prev.generalInfo,
+      inspectionPlace: data.inspection_place,
+      inspectionDate: data.inspection_date,
+      answers: data.answers,
+      controlStation: {
+        ...data.controlStation,
+        checks: selectedStation
+          ? Object.fromEntries(
+              selectedStation.thingToChecks.map(check => [
+                check.id,
+                {
+                  thingToCheck: check.things_to_check,
+                  condition: data.controlStation.checks[check.id]?.condition || '',
+                  remarks: data.controlStation.checks[check.id]?.remarks || ''
+                }
+              ])
+            )
+          : {},
+      },
+      colorMeasurement: data.colorMeasurement,
+      questions: questions.map(q => ({
+        id: q.id,
+        text: q.question,
+        // Optionally add type/options if available in q
+      }))
+    }
+  }));
+  
+  onComplete();
+};
 
   const handleAnswerChange = (questionId: number, value: string) => {
     const updatedAnswers = {
@@ -209,8 +237,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
     const stationId = parseInt(e.target.value);
     const station = controlStations.find(s => s.id === stationId) || null;
     setSelectedStation(station);
-    
-    // Update form data
     setValue('controlStation.stationId', stationId);
     setValue('controlStation.modelType', '');
     setValue('controlStation.checks', {});
@@ -306,7 +332,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          {/* Model and Inspector Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -333,7 +358,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
             </div>
           </div>
 
-          {/* Inspection Place and Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="inspection_place" className="block text-sm font-medium text-gray-700 mb-1">
@@ -366,7 +390,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
             </div>
           </div>
 
-          {/* Questions Section with Accordion */}
           <div className="space-y-6">
             <button
               type="button"
@@ -407,7 +430,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
             </div>
           </div>
 
-          {/* Control Stations Section */}
           <div className="space-y-6">
             <button
               type="button"
@@ -429,7 +451,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
             </button>
             
             <div className={`space-y-4 ${isControlStationOpen ? 'block' : 'hidden'}`}>
-              {/* Control Station Dropdown */}
               <div>
                 <label htmlFor="controlStation" className="block text-sm font-medium text-gray-700 mb-1">
                   Select Control Station*
@@ -449,7 +470,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 </select>
               </div>
 
-              {/* Model Type Selection (only shown when station is selected) */}
               {selectedStation && (
                 <div className="flex items-center space-x-4">
                   <span className="text-sm font-medium text-gray-700">Model Type:</span>
@@ -478,7 +498,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 </div>
               )}
 
-              {/* Things to Check Table (only shown when station is selected) */}
               {selectedStation && selectedStation.thingToChecks.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -527,7 +546,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
             </div>
           </div>
 
-          {/* Color Measuring Device Section */}
           <div className="space-y-6">
             <button
               type="button"
@@ -549,7 +567,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
             </button>
             
             <div className={`space-y-4 ${isColorMeasurementOpen ? 'block' : 'hidden'}`}>
-              {/* Device Selection */}
               <div>
                 <label htmlFor="colorDevice" className="block text-sm font-medium text-gray-700 mb-1">
                   Color Measuring Device
@@ -569,7 +586,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 </select>
               </div>
 
-              {/* Version of the device */}
               <div>
                 <label htmlFor="deviceVersion" className="block text-sm font-medium text-gray-700 mb-1">
                   Version of the device
@@ -584,7 +600,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 />
               </div>
 
-              {/* Device Condition */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Device Condition
@@ -615,7 +630,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 </div>
               </div>
 
-              {/* Device Comments */}
               <div>
                 <label htmlFor="deviceComments" className="block text-sm font-medium text-gray-700 mb-1">
                   Comments
@@ -630,7 +644,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 />
               </div>
 
-              {/* Expiry of Calibration Card */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Expiry of Calibration Card
@@ -661,7 +674,6 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 </div>
               </div>
 
-              {/* Calibration Comments */}
               <div>
                 <label htmlFor="calibrationComments" className="block text-sm font-medium text-gray-700 mb-1">
                   Comments
@@ -676,6 +688,22 @@ const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 />
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-between pt-6 border-t border-gray-200 hidden">
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Save and Continue
+            </button>
           </div>
         </form>
       </div>
