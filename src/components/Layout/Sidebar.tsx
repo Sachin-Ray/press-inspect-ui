@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         name: 'New Inspection',
         icon: <ClipboardCheck size={20} />,
         path: '/inspection/new',
-        roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector', 'SuperAdmin']
+        roles: ['PrePressInspector', 'PressInspector', 'PostPressInspector', 'PackagingInspector', 'SuperAdmin','Admin']
       },
       {
         name: 'My Reports',
@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         name: 'Reports',
         icon: <Activity size={20} />,
         path: '/reports',
-        roles: ['Admin', 'SuperAdmin']
+        roles: ['Admin', 'SuperAdmin', 'Admin']
       },
       {
         name: 'Master Data Entry',

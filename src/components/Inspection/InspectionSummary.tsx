@@ -70,6 +70,7 @@ interface InspectionReport {
 
 const userData = JSON.parse(localStorage.getItem('user') || '{}');
   const inspectorId = userData.id || 0;
+  const inspectorName = userData.name || 'Unknown Inspector';
   const inspectorRole = userData.roles || 'Unknown';
 
 interface InspectionSummaryProps {
@@ -251,7 +252,7 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report, questions
             <div className="space-y-3">
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Place:</span>
-                <span className="col-span-2 font-medium">{safeReport.generalInfo.inspectionPlace}</span>
+                <span className="col-span-2 font-medium">{safeReport.generalInfo.inspectionPlace}, {}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Date:</span>
@@ -259,7 +260,7 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report, questions
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Inspector:</span>
-                <span className="col-span-2 font-medium">{inspectorId}</span>
+                <span className="col-span-2 font-medium">{inspectorName}</span>
               </div>
               <div className="grid grid-cols-3">
                 <span className="text-sm text-gray-500">Role:</span>
@@ -440,7 +441,7 @@ const InspectionSummary: React.FC<InspectionSummaryProps> = ({ report, questions
                                           checkpoint.condition === 'Good' ? 'bg-green-100 text-green-800' :
                                           checkpoint.condition === 'Better' ? 'bg-blue-100 text-blue-800' :
                                           'bg-red-100 text-red-800'
-                                        }`}>
+                                        }`}>  
                                           {checkpoint.condition}
                                         </span>
                                       </td>

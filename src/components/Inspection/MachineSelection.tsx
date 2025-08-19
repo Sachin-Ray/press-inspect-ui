@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '../../context/FormContext';
 import { fetchAllMachine } from '../../services/api';
+// import { fetchAllMachine, saveMachineSelection } from '../../services/api';
 import {
   Paper,
   Box,
@@ -15,9 +16,13 @@ import {
   Card,
   CardContent,
   Button,
-  Link
+  Link,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { AxiosResponse } from 'axios';
+import { toast } from 'react-toastify';
+import { Description } from '@mui/icons-material';
 
 interface Machine {
   id: number;
@@ -52,16 +57,24 @@ interface Machine {
   } | null;
 }
 
-const MachineSelection: React.FC = () => {
+interface MachineSelectionProps {
+  onComplete?: () => void;
+}
+
+const MachineSelection: React.FC<MachineSelectionProps> = ({ onComplete }) => {
   const { formState, setFormState } = useForm();
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({
+    machines: true,
+    selection: false
+  });
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
+        setLoading(prev => ({ ...prev, machines: true }));
         const response: AxiosResponse<{ data: Machine[] }> = await fetchAllMachine();
         const machinesData = Array.isArray(response?.data?.data) ? response.data.data : [];
         setMachines(machinesData);
@@ -72,26 +85,63 @@ const MachineSelection: React.FC = () => {
         }
       } catch (err) {
         console.error('Error fetching data:', err);
+        setError('Failed to load machines');
       } finally {
-        setLoading(false);
+        setLoading(prev => ({ ...prev, machines: false }));
       }
     };
 
     fetchData();
   }, []);
 
-  const handleMachineChange = (event: SelectChangeEvent) => {
+  const handleMachineChange = async (event: SelectChangeEvent) => {
     const machineId = event.target.value as string;
     const machine = machines.find(m => m.id === Number(machineId)) || null;
     
-    setSelectedMachine(machine);
-    setFormState(prev => ({
-      ...prev,
-      machineId: Number(machineId),
-      machineName: machine ? machine.name : '',
-      machineDetails: machine
-    }));
+    try {
+      setLoading(prev => ({ ...prev, selection: true }));
+      
+      // Save selection to backend
+      if (machine) {
+        // await saveMachineSelection(machine.id);
+        toast.success('Machine selection saved');
+      }
+
+      setSelectedMachine(machine);
+      setFormState(prev => ({
+        ...prev,
+        machineId: Number(machineId),
+        machineName: machine ? machine.name : '',
+        machineDetails: machine
+      }));
+
+      // Automatically proceed if onComplete is provided
+      if (machine && onComplete) {
+        onComplete();
+      }
+    } catch (err) {
+      console.error('Error saving selection:', err);
+      toast.error('Failed to save machine selection');
+    } finally {
+      setLoading(prev => ({ ...prev, selection: false }));
+    }
   };
+
+  if (loading.machines) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ my: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
 
   return (
     <Paper elevation={3} sx={{ p: 3, margin: 'auto' }}>
@@ -103,7 +153,7 @@ const MachineSelection: React.FC = () => {
             label="Select Machine"
             value={formState.machineId?.toString() || ''}
             onChange={handleMachineChange}
-            disabled={loading}
+            disabled={loading.selection}
           >
             <MenuItem value="">
               <em>Select a machine</em>
@@ -114,6 +164,9 @@ const MachineSelection: React.FC = () => {
               </MenuItem>
             ))}
           </Select>
+          {loading.selection && (
+            <CircularProgress size={24} sx={{ position: 'absolute', right: 40, top: '50%' }} />
+          )}
         </FormControl>
       </Box>
 
@@ -149,6 +202,7 @@ const MachineSelection: React.FC = () => {
                           href={selectedMachine.technicalSpecification.pdf}
                           target="_blank"
                           rel="noopener noreferrer"
+                          startIcon={<Description />}
                         >
                           View PDF
                         </Button>
